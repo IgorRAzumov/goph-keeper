@@ -8,7 +8,7 @@ import (
 )
 
 func TestRouterHealthz(t *testing.T) {
-	router := Router(nil, Dependensies{})
+	router := Router(nil, Dependencies{})
 	request := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	response := httptest.NewRecorder()
 
@@ -32,7 +32,7 @@ func TestRouterHealthz(t *testing.T) {
 }
 
 func TestRouterAuthRegisterWithoutUseCaseReturnsNotImplemented(t *testing.T) {
-	router := Router(nil, Dependensies{})
+	router := Router(nil, Dependencies{})
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", nil)
 	response := httptest.NewRecorder()
 
@@ -44,7 +44,7 @@ func TestRouterAuthRegisterWithoutUseCaseReturnsNotImplemented(t *testing.T) {
 }
 
 func TestRouterSyncEndpointsAreStubs(t *testing.T) {
-	router := Router(nil, Dependensies{})
+	router := Router(nil, Dependencies{})
 
 	tests := []struct {
 		name   string

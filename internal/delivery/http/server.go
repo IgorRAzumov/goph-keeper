@@ -3,7 +3,7 @@ package httpapi
 import (
 	"context"
 	"errors"
-	httpapi "goph-keeper/internal/delivery/http/middlewear"
+	"goph-keeper/internal/delivery/http/middleware"
 	"goph-keeper/internal/logging"
 	"net"
 	"net/http"
@@ -22,7 +22,7 @@ type ServerConfig struct {
 	// Address — TCP-адрес для прослушивания (например "127.0.0.1:8080").
 	Address string
 	// Dependencies прокидывает сценарии в HTTP-обработчики.
-	Dependencies Dependensies
+	Dependencies Dependencies
 }
 
 // NewServer создаёт HTTP-сервер и регистрирует роуты.
@@ -35,7 +35,7 @@ func NewServer(cfg ServerConfig, logger logging.Logger) (*Server, error) {
 
 	server := &http.Server{
 		Addr:              cfg.Address,
-		Handler:           httpapi.RequestLogMiddleware(logger, handler),
+		Handler:           middleware.RequestLogMiddleware(logger, handler),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

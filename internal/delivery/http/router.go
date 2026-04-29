@@ -11,10 +11,10 @@ import (
 )
 
 // Router собирает и возвращает HTTP-роутер со всеми зарегистрированными маршрутами.
-func Router(log logging.Logger, deps Dependensies) chi.Router {
+func Router(log logging.Logger, deps Dependencies) chi.Router {
 	router := chi.NewRouter()
 
-	router.Get("/health", health.Health)
+	router.Get("/healthz", health.Health)
 
 	router.Route("/api/v1", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
