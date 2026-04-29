@@ -1,32 +1,34 @@
 package httpapi
 
 import (
-	"log/slog"
+	"goph-keeper/internal/delivery/http/handler/auth"
+	"goph-keeper/internal/delivery/http/handler/health"
+	"goph-keeper/internal/delivery/http/handler/stub"
 
 	"github.com/go-chi/chi/v5"
 
-	"goph-keeper/internal/delivery/http/handler"
+	"goph-keeper/internal/logging"
 )
 
 // Router собирает и возвращает HTTP-роутер со всеми зарегистрированными маршрутами.
-func Router(log *slog.Logger, deps Deps) chi.Router {
-	r := chi.NewRouter()
+func Router(log logging.Logger, deps Dependensies) chi.Router {
+	router := chi.NewRouter()
 
-	r.Get("/healthz", handler.Healthz)
+	router.Get("/health", health.Health)
 
-	r.Route("/api/v1", func(r chi.Router) {
+	router.Route("/api/v1", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
-			r.Post("/register", handler.AuthRegister(log, deps.RegisterUser))
-			r.Post("/login", handler.NotImplemented)
-			r.Post("/refresh", handler.NotImplemented)
-			r.Post("/logout", handler.NotImplemented)
+			r.Post("/register", auth.Register(log, deps.RegisterUser))
+			r.Post("/login", stub.NotImplemented)
+			r.Post("/refresh", stub.NotImplemented)
+			r.Post("/logout", stub.NotImplemented)
 		})
 
 		r.Route("/sync", func(r chi.Router) {
-			r.Get("/", handler.NotImplemented)
-			r.Post("/", handler.NotImplemented)
+			r.Get("/", stub.NotImplemented)
+			r.Post("/", stub.NotImplemented)
 		})
 	})
 
-	return r
+	return router
 }

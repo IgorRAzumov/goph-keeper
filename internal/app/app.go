@@ -1,5 +1,3 @@
-// Пакет app — корень композиции: связывает адаптеры инфраструктуры, сценарии и HTTP-слой доставки.
-// Точки входа cmd должны оставаться тонкими и делегировать жизненный цикл в App.
 package app
 
 import (
@@ -13,68 +11,68 @@ import (
 	httpapi "goph-keeper/internal/delivery/http"
 	usersvc "goph-keeper/internal/domain/user/service"
 	"goph-keeper/internal/infrastructure/memory"
+	"goph-keeper/internal/logging"
 )
 
-// App содержит запускаемые сервисы, собранные из конфигурации и адаптеров.
+// App содержит запускаемые сервисы
 type App struct {
-	http *httpapi.Server
-	log  *slog.Logger
+	httpServer *httpapi.Server
+	logger     logging.Logger
 }
 
-// New создаёт приложение по умолчанию: загружает конфигурацию из окружения,
-// создаёт логгер в stdout (текстовый обработчик) на уровне INFO и связывает адаптеры с HTTP-слоем.
+// New создаёт приложение по умолчанию
 func New() (*App, error) {
-	log := newLogger()
+	logger := newLogger()
 	cfg := config.Load()
-	return NewWith(cfg, log)
+	return NewWith(cfg, logger)
 }
 
-// NewWith собирает граф приложения для тестов или нестандартной проводки (явные config + logger).
-func NewWith(cfg config.Config, log *slog.Logger) (*App, error) {
-	userRepo := memory.NewUserRepository()
-	userService := usersvc.NewUserService(userRepo)
-	registerUser := user.NewRegisterUserUseCase(userService)
+// NewWith собирает граф приложения и запускает его
+func NewWith(cfg config.Config, logger logging.Logger) (*App, error) {
+	userService := usersvc.NewUserService(memory.NewUserRepository())
+	registerUser := user.NewUserUsecase(userService)
 
-	server, app, err := startServer(cfg, log, registerUser)
+	server, app, err := startServer(cfg, logger, registerUser)
 	if err != nil {
+		logger.Error("app init failed", "err", err)
 		return app, err
 	}
-	return &App{http: server, log: log}, nil
+	return &App{httpServer: server, logger: logger}, nil
 }
 
 // Logger возвращает логгер приложения
-func (app *App) Logger() *slog.Logger {
-	if app == nil || app.log == nil {
-		return slog.Default()
+func (app *App) Logger() logging.Logger {
+	if app == nil || app.logger == nil {
+		return logging.Default()
 	}
-	return app.log
+	return app.logger
 }
 
 // Run запуск приложения
 func (app *App) Run(ctx context.Context) error {
-	if app == nil || app.http == nil {
+	if app == nil || app.httpServer == nil {
 		return fmt.Errorf("app: not initialized")
 	}
-	return app.http.Run(ctx)
+	return app.httpServer.Run(ctx)
 }
 
 func startServer(
 	cfg config.Config,
-	log *slog.Logger,
-	registerUser *user.RegisterUserUseCase,
+	logger logging.Logger,
+	registerUser *user.Usecase,
 ) (*httpapi.Server, *App, error) {
 	server, err := httpapi.NewServer(httpapi.ServerConfig{
 		Address:      cfg.HTTPAddr,
-		Dependencies: httpapi.Deps{RegisterUser: registerUser},
-	}, log)
+		Dependencies: httpapi.Dependensies{RegisterUser: registerUser},
+	}, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("http server: %w", err)
 	}
 
-	log.Info("server listening", slog.String("addr", cfg.HTTPAddr))
+	logger.Info("server listening", "addr", cfg.HTTPAddr)
 	return server, nil, nil
 }
 
-func newLogger() *slog.Logger {
+func newLogger() logging.Logger {
 	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 }

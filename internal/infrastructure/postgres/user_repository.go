@@ -15,14 +15,14 @@ func NewUserRepository() *UserRepository {
 	return &UserRepository{}
 }
 
-// Save реализует domain.UserRepository.
-func (r *UserRepository) Save(ctx context.Context, user *model.User) error {
+// Save сохранение
+func (repository *UserRepository) Save(ctx context.Context, user *model.User) error {
 	_, _ = ctx, user
 	return common.ErrNotImplemented
 }
 
-// GetByLogin реализует domain.UserRepository.
-func (r *UserRepository) GetByLogin(ctx context.Context, login string) (*model.User, error) {
+// GetByLogin получение по логину
+func (repository *UserRepository) GetByLogin(ctx context.Context, login string) (*model.User, error) {
 	_, _ = ctx, login
 	return nil, common.ErrNotImplemented
 }

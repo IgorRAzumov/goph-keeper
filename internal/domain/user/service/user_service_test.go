@@ -77,3 +77,77 @@ func TestRegisterReturnsInfrastructureError(t *testing.T) {
 		t.Fatalf("expected ErrNotImplemented, got %v", err)
 	}
 }
+
+func TestRegisterRejectsInvalidInput(t *testing.T) {
+	t.Parallel()
+
+	service := NewUserService(userRepoStub{})
+
+	tests := []struct {
+		name     string
+		login    string
+		password string
+	}{
+		{name: "empty login", password: "secret"},
+		{name: "blank login", login: "  ", password: "secret"},
+		{name: "empty password", login: "alice"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := service.Register(context.Background(), tt.login, tt.password)
+			if !errors.Is(err, common.ErrInvalidInput) {
+				t.Fatalf("expected ErrInvalidInput, got %v", err)
+			}
+		})
+	}
+}
+
+func TestRegisterReturnsNotImplementedWithoutRepository(t *testing.T) {
+	t.Parallel()
+
+	service := NewUserService(nil)
+
+	_, err := service.Register(context.Background(), "alice", "secret")
+	if !errors.Is(err, common.ErrNotImplemented) {
+		t.Fatalf("expected ErrNotImplemented, got %v", err)
+	}
+}
+
+func TestRegisterReturnsConflictWhenLoginExists(t *testing.T) {
+	t.Parallel()
+
+	service := NewUserService(userRepoStub{
+		getByLogin: func(context.Context, string) (*model.User, error) {
+			return &model.User{ID: "user-1", Login: "alice"}, nil
+		},
+		save: func(context.Context, *model.User) error {
+			t.Fatal("save must not be called for duplicate login")
+			return nil
+		},
+	})
+
+	_, err := service.Register(context.Background(), "alice", "secret")
+	if !errors.Is(err, common.ErrConflict) {
+		t.Fatalf("expected ErrConflict, got %v", err)
+	}
+}
+
+func TestRegisterReturnsSaveError(t *testing.T) {
+	t.Parallel()
+
+	saveErr := errors.New("save failed")
+	service := NewUserService(userRepoStub{
+		getByLogin: func(context.Context, string) (*model.User, error) {
+			return nil, common.ErrNotFound
+		},
+		save: func(context.Context, *model.User) error {
+			return saveErr
+		},
+	})
+
+	_, err := service.Register(context.Background(), "alice", "secret")
+	if !errors.Is(err, saveErr) {
+		t.Fatalf("expected save error, got %v", err)
+	}
+}

@@ -1,4 +1,4 @@
-package handler
+package auth
 
 import (
 	"bytes"
@@ -12,12 +12,13 @@ import (
 	appuser "goph-keeper/internal/application/user"
 	usersvc "goph-keeper/internal/domain/user/service"
 	"goph-keeper/internal/infrastructure/memory"
+	"goph-keeper/internal/logging"
 )
 
 func TestAuthRegisterCreatesUser(t *testing.T) {
 	t.Parallel()
 
-	handler := AuthRegister(testLogger(), newRegisterUserUseCase())
+	handler := Register(testLogger(), newRegisterUserUseCase())
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBufferString(`{
 		"login": "alice",
 		"password": "secret"
@@ -41,10 +42,38 @@ func TestAuthRegisterCreatesUser(t *testing.T) {
 	}
 }
 
+func TestAuthRegisterWithoutUseCaseReturnsNotImplemented(t *testing.T) {
+	t.Parallel()
+
+	handler := Register(testLogger(), nil)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", nil)
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNotImplemented {
+		t.Fatalf("expected status %d, got %d", http.StatusNotImplemented, response.Code)
+	}
+}
+
+func TestAuthRegisterRejectsInvalidJSON(t *testing.T) {
+	t.Parallel()
+
+	handler := Register(testLogger(), newRegisterUserUseCase())
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBufferString(`{`))
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, response.Code)
+	}
+}
+
 func TestAuthRegisterRequiresPassword(t *testing.T) {
 	t.Parallel()
 
-	handler := AuthRegister(testLogger(), newRegisterUserUseCase())
+	handler := Register(testLogger(), newRegisterUserUseCase())
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBufferString(`{
 		"login": "alice"
 	}`))
@@ -60,7 +89,7 @@ func TestAuthRegisterRequiresPassword(t *testing.T) {
 func TestAuthRegisterReturnsConflictForDuplicateLogin(t *testing.T) {
 	t.Parallel()
 
-	handler := AuthRegister(testLogger(), newRegisterUserUseCase())
+	handler := Register(testLogger(), newRegisterUserUseCase())
 	requestBody := []byte(`{"login":"alice","password":"secret"}`)
 
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewReader(requestBody)))
@@ -73,12 +102,12 @@ func TestAuthRegisterReturnsConflictForDuplicateLogin(t *testing.T) {
 	}
 }
 
-func newRegisterUserUseCase() *appuser.RegisterUserUseCase {
+func newRegisterUserUseCase() *appuser.Usecase {
 	repo := memory.NewUserRepository()
 	service := usersvc.NewUserService(repo)
-	return appuser.NewRegisterUserUseCase(service)
+	return appuser.NewUserUsecase(service)
 }
 
-func testLogger() *slog.Logger {
+func testLogger() logging.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }

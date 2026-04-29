@@ -1,4 +1,4 @@
-package httpout
+package util
 
 import (
 	"encoding/json"
@@ -30,4 +30,3 @@ func StatusFromDomain(err error) (int, bool) {
 		return 0, false
 	}
 }
-

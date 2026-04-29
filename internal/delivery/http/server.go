@@ -4,73 +4,70 @@ import (
 	"context"
 	"errors"
 	httpapi "goph-keeper/internal/delivery/http/middlewear"
-	"log/slog"
+	"goph-keeper/internal/logging"
 	"net"
 	"net/http"
 	"time"
 )
 
-// Server — HTTP-точка входа в API (адаптер слоя доставки).
+// Server — HTTP-точка входа в API
 type Server struct {
 	httpServer *http.Server
-	l          net.Listener
-	log        *slog.Logger
+	listener   net.Listener
+	logger     logging.Logger
 }
 
-// ServerConfig конфигурирует HTTP-сервер.
+// ServerConfig конфигурирует HTTP-сервер
 type ServerConfig struct {
 	// Address — TCP-адрес для прослушивания (например "127.0.0.1:8080").
 	Address string
 	// Dependencies прокидывает сценарии в HTTP-обработчики.
-	Dependencies Deps
+	Dependencies Dependensies
 }
 
 // NewServer создаёт HTTP-сервер и регистрирует роуты.
-func NewServer(cfg ServerConfig, log *slog.Logger) (*Server, error) {
+func NewServer(cfg ServerConfig, logger logging.Logger) (*Server, error) {
 	if cfg.Address == "" {
 		cfg.Address = "127.0.0.1:8080"
 	}
-	if log == nil {
-		log = slog.Default()
-	}
 
-	var handler http.Handler = Router(log, cfg.Dependencies)
+	var handler http.Handler = Router(logger, cfg.Dependencies)
 
-	hs := &http.Server{
+	server := &http.Server{
 		Addr:              cfg.Address,
-		Handler:           httpapi.RequestLogMiddleware(log, handler),
+		Handler:           httpapi.RequestLogMiddleware(logger, handler),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	l, err := net.Listen("tcp", cfg.Address)
+	listener, err := net.Listen("tcp", cfg.Address)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Server{httpServer: hs, l: l, log: log}, nil
+	return &Server{httpServer: server, listener: listener, logger: logger}, nil
 }
 
-// Addr возвращает фактически занятый адрес (может отличаться от cfg, если ОС выбрала порт).
-func (s *Server) Addr() string {
-	if s.l == nil {
+// Addr возвращает фактически занятый адрес
+func (server *Server) Addr() string {
+	if server.listener == nil {
 		return ""
 	}
-	return s.l.Addr().String()
+	return server.listener.Addr().String()
 }
 
 // Run обслуживает запросы до отмены ctx, затем корректно завершает работу.
-func (s *Server) Run(ctx context.Context) error {
-	errCh := make(chan error, 1)
+func (server *Server) Run(ctx context.Context) error {
+	errChannel := make(chan error, 1)
 	go func() {
-		errCh <- s.httpServer.Serve(s.l)
+		errChannel <- server.httpServer.Serve(server.listener)
 	}()
 
 	select {
 	case <-ctx.Done():
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		return s.httpServer.Shutdown(shutdownCtx)
-	case err := <-errCh:
+		return server.httpServer.Shutdown(shutdownCtx)
+	case err := <-errChannel:
 		if errors.Is(err, http.ErrServerClosed) {
 			return nil
 		}

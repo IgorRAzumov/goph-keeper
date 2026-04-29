@@ -1,19 +1,23 @@
 package httpapi
 
 import (
-	"log/slog"
+	"goph-keeper/internal/logging"
 	"net/http"
 	"time"
 )
 
-func RequestLogMiddleware(log *slog.Logger, next http.Handler) http.Handler {
+func RequestLogMiddleware(log logging.Logger, next http.Handler) http.Handler {
+	if log == nil {
+		log = logging.Default()
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		next.ServeHTTP(w, r)
 		log.Info("http_request",
-			slog.String("method", r.Method),
-			slog.String("path", r.URL.Path),
-			slog.Duration("dur", time.Since(start)),
+			"method", r.Method,
+			"path", r.URL.Path,
+			"dur", time.Since(start),
 		)
 	})
 }

@@ -21,33 +21,31 @@ func NewUserRepository() *UserRepository {
 }
 
 // Save сохраняет нового пользователя.
-func (r *UserRepository) Save(ctx context.Context, user *model.User) error {
-	_ = ctx
+func (repository *UserRepository) Save(ctx context.Context, user *model.User) error {
 	if user == nil || user.ID == "" || user.Login == "" || len(user.PasswordHash) == 0 {
 		return common.ErrInvalidInput
 	}
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	repository.mu.Lock()
+	defer repository.mu.Unlock()
 
-	if _, ok := r.byLogin[user.Login]; ok {
+	if _, ok := repository.byLogin[user.Login]; ok {
 		return common.ErrConflict
 	}
-	r.byLogin[user.Login] = cloneUser(user)
+	repository.byLogin[user.Login] = cloneUser(user)
 	return nil
 }
 
 // GetByLogin возвращает пользователя по логину.
-func (r *UserRepository) GetByLogin(ctx context.Context, login string) (*model.User, error) {
-	_ = ctx
+func (repository *UserRepository) GetByLogin(ctx context.Context, login string) (*model.User, error) {
 	if login == "" {
 		return nil, common.ErrInvalidInput
 	}
 
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	repository.mu.RLock()
+	defer repository.mu.RUnlock()
 
-	user, ok := r.byLogin[login]
+	user, ok := repository.byLogin[login]
 	if !ok {
 		return nil, common.ErrNotFound
 	}
