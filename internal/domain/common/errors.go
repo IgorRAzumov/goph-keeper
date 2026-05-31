@@ -12,4 +12,6 @@ var (
 	ErrConflict = errors.New("conflict")
 	// ErrInvalidInput  - обязательные поля не заполнены или имеют неверный формат.
 	ErrInvalidInput = errors.New("invalid input")
+	// ErrUnauthorized — неверные учётные данные или отсутствует/невалидна авторизация.
+	ErrUnauthorized = errors.New("unauthorized")
 )

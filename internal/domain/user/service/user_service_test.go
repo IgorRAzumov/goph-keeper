@@ -7,36 +7,28 @@ import (
 
 	"goph-keeper/internal/domain/common"
 	"goph-keeper/internal/domain/user/model"
+	usermocks "goph-keeper/internal/domain/user/repository/mocks"
 
+	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
 )
-
-type userRepoStub struct {
-	getByLogin func(context.Context, string) (*model.User, error)
-	save       func(context.Context, *model.User) error
-}
-
-func (r userRepoStub) GetByLogin(ctx context.Context, login string) (*model.User, error) {
-	return r.getByLogin(ctx, login)
-}
-
-func (r userRepoStub) Save(ctx context.Context, user *model.User) error {
-	return r.save(ctx, user)
-}
 
 func TestRegisterHashesPasswordAndSavesUser(t *testing.T) {
 	t.Parallel()
 
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
 	var saved *model.User
-	service := NewUserService(userRepoStub{
-		getByLogin: func(context.Context, string) (*model.User, error) {
-			return nil, common.ErrNotFound
-		},
-		save: func(_ context.Context, user *model.User) error {
+	repo := usermocks.NewMockUserRepository(ctrl)
+	repo.EXPECT().GetByLogin(gomock.Any(), "alice").Return(nil, common.ErrNotFound)
+	repo.EXPECT().Save(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, user *model.User) error {
 			saved = user
 			return nil
-		},
-	})
+		})
+
+	service := NewUserService(repo)
 
 	id, err := service.Register(context.Background(), " alice ", "secret")
 	if err != nil {
@@ -62,15 +54,13 @@ func TestRegisterHashesPasswordAndSavesUser(t *testing.T) {
 func TestRegisterReturnsInfrastructureError(t *testing.T) {
 	t.Parallel()
 
-	service := NewUserService(userRepoStub{
-		getByLogin: func(context.Context, string) (*model.User, error) {
-			return nil, common.ErrNotImplemented
-		},
-		save: func(context.Context, *model.User) error {
-			t.Fatal("save must not be called when lookup failed")
-			return nil
-		},
-	})
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	repo := usermocks.NewMockUserRepository(ctrl)
+	repo.EXPECT().GetByLogin(gomock.Any(), "alice").Return(nil, common.ErrNotImplemented)
+
+	service := NewUserService(repo)
 
 	_, err := service.Register(context.Background(), "alice", "secret")
 	if !errors.Is(err, common.ErrNotImplemented) {
@@ -81,7 +71,10 @@ func TestRegisterReturnsInfrastructureError(t *testing.T) {
 func TestRegisterRejectsInvalidInput(t *testing.T) {
 	t.Parallel()
 
-	service := NewUserService(userRepoStub{})
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	service := NewUserService(usermocks.NewMockUserRepository(ctrl))
 
 	tests := []struct {
 		name     string
@@ -117,15 +110,15 @@ func TestRegisterReturnsNotImplementedWithoutRepository(t *testing.T) {
 func TestRegisterReturnsConflictWhenLoginExists(t *testing.T) {
 	t.Parallel()
 
-	service := NewUserService(userRepoStub{
-		getByLogin: func(context.Context, string) (*model.User, error) {
-			return &model.User{ID: "user-1", Login: "alice"}, nil
-		},
-		save: func(context.Context, *model.User) error {
-			t.Fatal("save must not be called for duplicate login")
-			return nil
-		},
-	})
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	repo := usermocks.NewMockUserRepository(ctrl)
+	repo.EXPECT().
+		GetByLogin(gomock.Any(), "alice").
+		Return(&model.User{ID: "user-1", Login: "alice"}, nil)
+
+	service := NewUserService(repo)
 
 	_, err := service.Register(context.Background(), "alice", "secret")
 	if !errors.Is(err, common.ErrConflict) {
@@ -136,15 +129,15 @@ func TestRegisterReturnsConflictWhenLoginExists(t *testing.T) {
 func TestRegisterReturnsSaveError(t *testing.T) {
 	t.Parallel()
 
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
 	saveErr := errors.New("save failed")
-	service := NewUserService(userRepoStub{
-		getByLogin: func(context.Context, string) (*model.User, error) {
-			return nil, common.ErrNotFound
-		},
-		save: func(context.Context, *model.User) error {
-			return saveErr
-		},
-	})
+	repo := usermocks.NewMockUserRepository(ctrl)
+	repo.EXPECT().GetByLogin(gomock.Any(), "alice").Return(nil, common.ErrNotFound)
+	repo.EXPECT().Save(gomock.Any(), gomock.Any()).Return(saveErr)
+
+	service := NewUserService(repo)
 
 	_, err := service.Register(context.Background(), "alice", "secret")
 	if !errors.Is(err, saveErr) {

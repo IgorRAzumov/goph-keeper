@@ -2,7 +2,7 @@ package auth
 
 import (
 	"encoding/json"
-	"goph-keeper/internal/application/user"
+	appregister "goph-keeper/internal/application/auth/register"
 	"goph-keeper/internal/delivery/http/handler/stub"
 	"goph-keeper/internal/delivery/http/util"
 	"goph-keeper/internal/logging"
@@ -11,7 +11,7 @@ import (
 )
 
 // Register возвращает обработчик отвечающий за регистрацию нового пользователя
-func Register(log logging.Logger, usecase *user.Usecase) http.HandlerFunc {
+func Register(log logging.Logger, usecase *appregister.Usecase) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if usecase == nil {
 			stub.NotImplemented(writer, request)
@@ -34,7 +34,7 @@ func Register(log logging.Logger, usecase *user.Usecase) http.HandlerFunc {
 			return
 		}
 
-		output, err := usecase.Execute(request.Context(), user.RegisterUserInput{
+		output, err := usecase.Execute(request.Context(), appregister.Input{
 			Login:    req.Login,
 			Password: req.Password,
 		})

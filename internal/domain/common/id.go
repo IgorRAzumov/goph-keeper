@@ -1,15 +1,8 @@
 package common
 
-import (
-	"crypto/rand"
-	"encoding/hex"
-)
+import "github.com/google/uuid"
 
-// NewID генерирует непрозрачный идентификатор (32 hex-символа).
+// NewID генерирует непрозрачный идентификатор (UUID v4).
 func NewID() (string, error) {
-	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(b[:]), nil
+	return uuid.NewString(), nil
 }

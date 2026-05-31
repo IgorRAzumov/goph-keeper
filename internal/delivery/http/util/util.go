@@ -20,6 +20,8 @@ func StatusFromDomain(err error) (int, bool) {
 	switch {
 	case errors.Is(err, common.ErrInvalidInput):
 		return http.StatusBadRequest, true
+	case errors.Is(err, common.ErrUnauthorized):
+		return http.StatusUnauthorized, true
 	case errors.Is(err, common.ErrNotFound):
 		return http.StatusNotFound, true
 	case errors.Is(err, common.ErrConflict):

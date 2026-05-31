@@ -1,4 +1,4 @@
-package user
+package register
 
 import (
 	"context"
@@ -18,18 +18,17 @@ func NewUserUsecase(userService *usersvc.UserService) *Usecase {
 	return &Usecase{userService: userService}
 }
 
-// Execute выполняет сценарий. Полная реализация появится после добавления аутентификации и хэширования паролей.
-func (usecase *Usecase) Execute(ctx context.Context, in RegisterUserInput) (RegisterUserOutput, error) {
-	if strings.TrimSpace(in.Login) == "" || in.Password == "" {
-		return RegisterUserOutput{}, common.ErrInvalidInput
-	}
+func (usecase *Usecase) Execute(ctx context.Context, in Input) (Output, error) {
 	if usecase == nil || usecase.userService == nil {
-		return RegisterUserOutput{}, common.ErrNotImplemented
+		return Output{}, common.ErrNotImplemented
+	}
+	if strings.TrimSpace(in.Login) == "" || in.Password == "" {
+		return Output{}, common.ErrInvalidInput
 	}
 
 	userID, err := usecase.userService.Register(ctx, in.Login, in.Password)
 	if err != nil {
-		return RegisterUserOutput{}, err
+		return Output{}, err
 	}
-	return RegisterUserOutput{UserID: userID}, nil
+	return Output{UserID: userID}, nil
 }

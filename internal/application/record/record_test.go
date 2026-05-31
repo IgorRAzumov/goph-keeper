@@ -7,34 +7,25 @@ import (
 
 	"goph-keeper/internal/domain/common"
 	"goph-keeper/internal/domain/record/model"
+	repomocks "goph-keeper/internal/domain/record/repository/mocks"
 	recordsvc "goph-keeper/internal/domain/record/service"
+
+	"go.uber.org/mock/gomock"
 )
-
-type recordRepoStub struct {
-	get    func(context.Context, string, string) (*model.Record, error)
-	update func(context.Context, string, *model.Record) error
-}
-
-func (r recordRepoStub) Get(ctx context.Context, ownerID, recordID string) (*model.Record, error) {
-	return r.get(ctx, ownerID, recordID)
-}
-
-func (r recordRepoStub) Update(ctx context.Context, ownerID string, record *model.Record) error {
-	return r.update(ctx, ownerID, record)
-}
 
 func TestRecordUseCaseRead(t *testing.T) {
 	t.Parallel()
 
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
 	want := &model.Record{ID: "record-1", OwnerID: "owner-1", Type: model.RecordTypeText}
-	usecase := NewRecordUseCase(recordsvc.NewRecordService(recordRepoStub{
-		get: func(_ context.Context, ownerID, recordID string) (*model.Record, error) {
-			if ownerID != "owner-1" || recordID != "record-1" {
-				t.Fatalf("unexpected ids: owner=%q record=%q", ownerID, recordID)
-			}
-			return want, nil
-		},
-	}))
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo.EXPECT().
+		Get(gomock.Any(), "owner-1", "record-1").
+		Return(want, nil)
+
+	usecase := NewRecordUseCase(recordsvc.NewRecordService(repo))
 
 	out, err := usecase.Read(context.Background(), GetRecordInput{OwnerID: "owner-1", RecordID: "record-1"})
 	if err != nil {
@@ -106,8 +97,13 @@ func TestRecordUseCaseUpdateRejectsInvalidInput(t *testing.T) {
 func TestRecordUseCaseUpdate(t *testing.T) {
 	t.Parallel()
 
-	usecase := NewRecordUseCase(recordsvc.NewRecordService(recordRepoStub{
-		update: func(_ context.Context, ownerID string, record *model.Record) error {
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo.EXPECT().
+		Update(gomock.Any(), "owner-1", gomock.Any()).
+		DoAndReturn(func(_ context.Context, ownerID string, record *model.Record) error {
 			if ownerID != "owner-1" {
 				t.Fatalf("unexpected owner: %q", ownerID)
 			}
@@ -115,8 +111,9 @@ func TestRecordUseCaseUpdate(t *testing.T) {
 				t.Fatalf("unexpected record id: %q", record.ID)
 			}
 			return nil
-		},
-	}))
+		})
+
+	usecase := NewRecordUseCase(recordsvc.NewRecordService(repo))
 
 	_, err := usecase.Update(context.Background(), UpdateRecordInput{
 		OwnerID: "owner-1",

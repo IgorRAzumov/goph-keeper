@@ -1,21 +1,19 @@
 package common
 
 import (
-	"encoding/hex"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
-func TestNewIDReturnsHexEncoded16Bytes(t *testing.T) {
+func TestNewIDReturnsUUID(t *testing.T) {
 	id, err := NewID()
 	if err != nil {
 		t.Fatalf("NewID failed: %v", err)
 	}
 
-	if len(id) != 32 {
-		t.Fatalf("expected 32 hex chars, got %d", len(id))
-	}
-	if _, err := hex.DecodeString(id); err != nil {
-		t.Fatalf("expected hex encoded id, got %q: %v", id, err)
+	if _, err := uuid.Parse(id); err != nil {
+		t.Fatalf("expected uuid, got %q: %v", id, err)
 	}
 }
 

@@ -7,33 +7,24 @@ import (
 
 	"goph-keeper/internal/domain/common"
 	"goph-keeper/internal/domain/record/model"
+	repomocks "goph-keeper/internal/domain/record/repository/mocks"
+
+	"go.uber.org/mock/gomock"
 )
-
-type recordRepoStub struct {
-	update func(context.Context, string, *model.Record) error
-	get    func(context.Context, string, string) (*model.Record, error)
-}
-
-func (r recordRepoStub) Update(ctx context.Context, ownerID string, record *model.Record) error {
-	return r.update(ctx, ownerID, record)
-}
-
-func (r recordRepoStub) Get(ctx context.Context, ownerID, recordID string) (*model.Record, error) {
-	return r.get(ctx, ownerID, recordID)
-}
 
 func TestGetReturnsRecord(t *testing.T) {
 	t.Parallel()
 
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
 	want := &model.Record{ID: "record-1", OwnerID: "owner-1", Type: model.RecordTypeText}
-	service := NewRecordService(recordRepoStub{
-		get: func(_ context.Context, ownerID, recordID string) (*model.Record, error) {
-			if ownerID != "owner-1" || recordID != "record-1" {
-				t.Fatalf("unexpected ids: owner=%q record=%q", ownerID, recordID)
-			}
-			return want, nil
-		},
-	})
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo.EXPECT().
+		Get(gomock.Any(), "owner-1", "record-1").
+		Return(want, nil)
+
+	service := NewRecordService(repo)
 
 	got, err := service.Get(context.Background(), "owner-1", "record-1")
 	if err != nil {
@@ -47,7 +38,10 @@ func TestGetReturnsRecord(t *testing.T) {
 func TestGetRejectsInvalidInput(t *testing.T) {
 	t.Parallel()
 
-	service := NewRecordService(recordRepoStub{})
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	service := NewRecordService(repomocks.NewMockRecordRepository(ctrl))
 
 	tests := []struct {
 		name     string
@@ -82,8 +76,13 @@ func TestGetReturnsNotImplementedWithoutRepository(t *testing.T) {
 func TestUpdateAssignsOwnerAndValidatesRecord(t *testing.T) {
 	t.Parallel()
 
-	service := NewRecordService(recordRepoStub{
-		update: func(_ context.Context, ownerID string, record *model.Record) error {
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo.EXPECT().
+		Update(gomock.Any(), "owner-1", gomock.Any()).
+		DoAndReturn(func(_ context.Context, ownerID string, record *model.Record) error {
 			if ownerID != "owner-1" {
 				t.Fatalf("unexpected owner id: %q", ownerID)
 			}
@@ -91,8 +90,9 @@ func TestUpdateAssignsOwnerAndValidatesRecord(t *testing.T) {
 				t.Fatalf("expected owner to be assigned, got %q", record.OwnerID)
 			}
 			return nil
-		},
-	})
+		})
+
+	service := NewRecordService(repo)
 
 	err := service.Update(context.Background(), "owner-1", &model.Record{
 		ID:         "record-1",
@@ -107,12 +107,11 @@ func TestUpdateAssignsOwnerAndValidatesRecord(t *testing.T) {
 func TestUpdateRejectsOwnerMismatch(t *testing.T) {
 	t.Parallel()
 
-	service := NewRecordService(recordRepoStub{
-		update: func(context.Context, string, *model.Record) error {
-			t.Fatal("update must not be called for invalid input")
-			return nil
-		},
-	})
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	service := NewRecordService(repo)
 
 	err := service.Update(context.Background(), "owner-1", &model.Record{
 		ID:         "record-1",
@@ -128,12 +127,11 @@ func TestUpdateRejectsOwnerMismatch(t *testing.T) {
 func TestUpdateRejectsUnknownType(t *testing.T) {
 	t.Parallel()
 
-	service := NewRecordService(recordRepoStub{
-		update: func(context.Context, string, *model.Record) error {
-			t.Fatal("update must not be called for invalid input")
-			return nil
-		},
-	})
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	service := NewRecordService(repo)
 
 	err := service.Update(context.Background(), "owner-1", &model.Record{
 		ID:         "record-1",
@@ -148,12 +146,11 @@ func TestUpdateRejectsUnknownType(t *testing.T) {
 func TestUpdateRejectsEmptyCiphertextForActiveRecord(t *testing.T) {
 	t.Parallel()
 
-	service := NewRecordService(recordRepoStub{
-		update: func(context.Context, string, *model.Record) error {
-			t.Fatal("update must not be called for invalid input")
-			return nil
-		},
-	})
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	service := NewRecordService(repo)
 
 	err := service.Update(context.Background(), "owner-1", &model.Record{
 		ID:   "record-1",
@@ -167,14 +164,20 @@ func TestUpdateRejectsEmptyCiphertextForActiveRecord(t *testing.T) {
 func TestUpdateAllowsDeletedRecordWithoutCiphertext(t *testing.T) {
 	t.Parallel()
 
-	service := NewRecordService(recordRepoStub{
-		update: func(_ context.Context, _ string, record *model.Record) error {
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo.EXPECT().
+		Update(gomock.Any(), "owner-1", gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, record *model.Record) error {
 			if !record.Deleted {
 				t.Fatal("expected deleted record")
 			}
 			return nil
-		},
-	})
+		})
+
+	service := NewRecordService(repo)
 
 	err := service.Update(context.Background(), "owner-1", &model.Record{
 		ID:      "record-1",

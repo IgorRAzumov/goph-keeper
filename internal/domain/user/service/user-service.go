@@ -55,3 +55,27 @@ func (service *UserService) Register(ctx context.Context, login, password string
 	}
 	return id, nil
 }
+
+// Authenticate проверяет логин/пароль и возвращает пользователя.
+func (service *UserService) Authenticate(ctx context.Context, login, password string) (*model.User, error) {
+	login = strings.TrimSpace(login)
+	if login == "" || password == "" {
+		return nil, common.ErrInvalidInput
+	}
+	if service == nil || service.userRepository == nil {
+		return nil, common.ErrNotImplemented
+	}
+
+	user, err := service.userRepository.GetByLogin(ctx, login)
+	if err != nil {
+		if errors.Is(err, common.ErrNotFound) {
+			return nil, common.ErrUnauthorized
+		}
+		return nil, err
+	}
+
+	if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(password)); err != nil {
+		return nil, common.ErrUnauthorized
+	}
+	return user, nil
+}

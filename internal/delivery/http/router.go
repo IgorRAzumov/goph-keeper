@@ -4,6 +4,7 @@ import (
 	"goph-keeper/internal/delivery/http/handler/auth"
 	"goph-keeper/internal/delivery/http/handler/health"
 	"goph-keeper/internal/delivery/http/handler/stub"
+	httpmiddleware "goph-keeper/internal/delivery/http/middleware"
 
 	"github.com/go-chi/chi/v5"
 
@@ -16,15 +17,16 @@ func Router(log logging.Logger, deps Dependencies) chi.Router {
 
 	router.Get("/healthz", health.Health)
 
-	router.Route("/api/v1", func(r chi.Router) {
-		r.Route("/auth", func(r chi.Router) {
+	router.Route("/api/v1", func(internalRouter chi.Router) {
+		internalRouter.Route("/auth", func(r chi.Router) {
 			r.Post("/register", auth.Register(log, deps.RegisterUser))
-			r.Post("/login", stub.NotImplemented)
-			r.Post("/refresh", stub.NotImplemented)
-			r.Post("/logout", stub.NotImplemented)
+			r.Post("/login", auth.Login(log, deps.Login))
+			r.Post("/refresh", auth.Refresh(log, deps.Refresh))
+			r.Post("/logout", auth.Logout(log, deps.Logout))
 		})
 
-		r.Route("/sync", func(r chi.Router) {
+		internalRouter.Route("/sync", func(r chi.Router) {
+			r.Use(httpmiddleware.BearerAuth(deps.JWT, deps.Sessions))
 			r.Get("/", stub.NotImplemented)
 			r.Post("/", stub.NotImplemented)
 		})
