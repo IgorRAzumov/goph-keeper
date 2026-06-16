@@ -1,0 +1,13 @@
+# Binaries
+/main
+/cmd/server/server
+
+# IDE
+.idea/
+out/
+
+# Environment
+.env
+
+# OS
+.DS_Store
