@@ -37,7 +37,7 @@ func (repository *UserRepository) Save(ctx context.Context, user *model.User) er
 	defer func() { _ = transaction.Rollback() }()
 
 	var exists int
-	err = transaction.QueryRowContext(ctx, `SELECT 1 FROM users WHERE login=$1 LIMIT 1`, user.Login).Scan(&exists)
+	err = transaction.QueryRowContext(ctx, `SELECT 1 FROM keeper_users WHERE login=$1 LIMIT 1`, user.Login).Scan(&exists)
 	if err == nil {
 		return common.ErrConflict
 	}
@@ -46,7 +46,7 @@ func (repository *UserRepository) Save(ctx context.Context, user *model.User) er
 	}
 
 	_, err = transaction.ExecContext(ctx, `
-INSERT INTO users (id, login, password_hash)
+INSERT INTO keeper_users (id, login, password_hash)
 VALUES ($1, $2, $3)
 `, user.ID, user.Login, user.PasswordHash)
 	if err != nil {
@@ -70,7 +70,7 @@ func (repository *UserRepository) GetByLogin(ctx context.Context, login string) 
 
 	row := repository.db.QueryRowContext(ctx, `
 SELECT id, login, password_hash
-FROM users
+FROM keeper_users
 WHERE login=$1
 LIMIT 1
 `, login)

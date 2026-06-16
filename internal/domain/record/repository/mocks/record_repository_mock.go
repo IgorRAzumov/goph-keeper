@@ -56,6 +56,21 @@ func (mr *MockRecordRepositoryMockRecorder) Get(ctx, ownerID, recordID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRecordRepository)(nil).Get), ctx, ownerID, recordID)
 }
 
+// ListSince mocks base method.
+func (m *MockRecordRepository) ListSince(ctx context.Context, ownerID string, sinceVersion int64) ([]*model.Record, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSince", ctx, ownerID, sinceVersion)
+	ret0, _ := ret[0].([]*model.Record)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSince indicates an expected call of ListSince.
+func (mr *MockRecordRepositoryMockRecorder) ListSince(ctx, ownerID, sinceVersion any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSince", reflect.TypeOf((*MockRecordRepository)(nil).ListSince), ctx, ownerID, sinceVersion)
+}
+
 // Update mocks base method.
 func (m *MockRecordRepository) Update(ctx context.Context, ownerID string, r *model.Record) error {
 	m.ctrl.T.Helper()
@@ -68,4 +83,19 @@ func (m *MockRecordRepository) Update(ctx context.Context, ownerID string, r *mo
 func (mr *MockRecordRepositoryMockRecorder) Update(ctx, ownerID, r any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRecordRepository)(nil).Update), ctx, ownerID, r)
+}
+
+// UpdateBatch mocks base method.
+func (m *MockRecordRepository) UpdateBatch(ctx context.Context, ownerID string, records []*model.Record) ([]*model.Record, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateBatch", ctx, ownerID, records)
+	ret0, _ := ret[0].([]*model.Record)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateBatch indicates an expected call of UpdateBatch.
+func (mr *MockRecordRepositoryMockRecorder) UpdateBatch(ctx, ownerID, records any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBatch", reflect.TypeOf((*MockRecordRepository)(nil).UpdateBatch), ctx, ownerID, records)
 }

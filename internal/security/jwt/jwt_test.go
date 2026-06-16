@@ -57,14 +57,17 @@ func TestParseAccessTokenRejectsInvalidHeader(t *testing.T) {
 func TestParseAccessTokenRejectsBadSignature(t *testing.T) {
 	t.Parallel()
 
-	token, err := NewProvider("secret").IssueAccessToken("user-1", "sess-1", time.Minute, time.Now().UTC())
+	now := time.Now().UTC()
+	token, err := NewProvider("secret").IssueAccessToken("user-1", "sess-1", time.Minute, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	parts := strings.Split(token, ".")
-	parts[2] = parts[2][:len(parts[2])-1] + "x"
 
-	if _, err := NewProvider("secret").ParseAccessToken(strings.Join(parts, "."), time.Now().UTC()); err == nil {
+	_, err = NewProvider("other-secret").ParseAccessToken(token, now)
+	if err == nil {
 		t.Fatal("expected bad signature error")
+	}
+	if !strings.Contains(err.Error(), "bad signature") {
+		t.Fatalf("expected bad signature error, got %v", err)
 	}
 }

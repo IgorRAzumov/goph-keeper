@@ -5,6 +5,7 @@ import (
 	applogout "goph-keeper/internal/application/auth/logout"
 	apprefresh "goph-keeper/internal/application/auth/refresh"
 	appregister "goph-keeper/internal/application/auth/register"
+	appsync "goph-keeper/internal/application/sync"
 	sessionrepo "goph-keeper/internal/domain/session/repository"
 	"goph-keeper/internal/security/jwt"
 )
@@ -23,4 +24,6 @@ type Dependencies struct {
 	JWT *jwt.Provider
 	// Sessions — хранилище серверных сессий для проверки отозванных access-токенов.
 	Sessions sessionrepo.SessionRepository
+	// Sync — pull/push зашифрованных записей владельца.
+	Sync *appsync.Usecase
 }

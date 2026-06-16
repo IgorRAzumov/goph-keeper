@@ -39,6 +39,9 @@ func TestInitDependenciesBuildsGraph(t *testing.T) {
 	if dependencies.JWT == nil || dependencies.Sessions == nil {
 		t.Fatal("expected jwt provider and sessions repository")
 	}
+	if dependencies.Sync == nil {
+		t.Fatal("expected sync usecase")
+	}
 }
 
 func TestLoggerReturnsDefaultForNilApp(t *testing.T) {

@@ -4,7 +4,7 @@
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
 }</component>
-  <component name="ProjectRootManager">
+  <component name="ProjectRootManager" version="2" project-jdk-name="Go 1.25.4" project-jdk-type="Go SDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
 </project>

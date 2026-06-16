@@ -3,7 +3,7 @@ package httpapi
 import (
 	"goph-keeper/internal/delivery/http/handler/auth"
 	"goph-keeper/internal/delivery/http/handler/health"
-	"goph-keeper/internal/delivery/http/handler/stub"
+	synchandler "goph-keeper/internal/delivery/http/handler/sync"
 	httpmiddleware "goph-keeper/internal/delivery/http/middleware"
 
 	"github.com/go-chi/chi/v5"
@@ -27,8 +27,8 @@ func Router(log logging.Logger, deps Dependencies) chi.Router {
 
 		internalRouter.Route("/sync", func(r chi.Router) {
 			r.Use(httpmiddleware.BearerAuth(deps.JWT, deps.Sessions))
-			r.Get("/", stub.NotImplemented)
-			r.Post("/", stub.NotImplemented)
+			r.Get("/", synchandler.Pull(log, deps.Sync))
+			r.Post("/", synchandler.Push(log, deps.Sync))
 		})
 	})
 

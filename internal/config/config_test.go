@@ -1,12 +1,11 @@
 package config
 
 import (
-	"strings"
 	"testing"
 	"time"
 )
 
-func TestLoadRejectsDefaultSecretAndEmptyDSN(t *testing.T) {
+func TestLoadUsesLocalDefaults(t *testing.T) {
 	t.Setenv("GOPHKEEPER_ADDR", "")
 	t.Setenv("GOPHKEEPER_JWT_SECRET", "")
 	t.Setenv("GOPHKEEPER_ACCESS_TTL", "")
@@ -14,12 +13,18 @@ func TestLoadRejectsDefaultSecretAndEmptyDSN(t *testing.T) {
 	t.Setenv("GOPHKEEPER_POSTGRES_DSN", "")
 	t.Setenv("GOPHKEEPER_POSTGRES_MAX_OPEN_CONNS", "")
 
-	_, err := Load()
-	if err == nil {
-		t.Fatal("expected error")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
 	}
-	if !strings.Contains(err.Error(), "config:") {
-		t.Fatalf("expected config error prefix, got %v", err)
+	if cfg.HTTPAddr != "127.0.0.1:8080" {
+		t.Fatalf("unexpected HTTP addr: %q", cfg.HTTPAddr)
+	}
+	if cfg.JWTSecret != DefaultJWTSecret {
+		t.Fatalf("unexpected jwt secret: %q", cfg.JWTSecret)
+	}
+	if cfg.PostgresDSN != DefaultPostgresDSN {
+		t.Fatalf("unexpected postgres dsn: %q", cfg.PostgresDSN)
 	}
 }
 

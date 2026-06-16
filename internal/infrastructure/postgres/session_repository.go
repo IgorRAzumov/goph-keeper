@@ -29,7 +29,7 @@ func (repository *SessionRepository) Save(ctx context.Context, session *model.Se
 	}
 
 	_, err := repository.db.ExecContext(ctx, `
-INSERT INTO sessions (id, user_id, refresh_token_hash, refresh_expires_at)
+INSERT INTO keeper_sessions (id, user_id, refresh_token_hash, refresh_expires_at)
 VALUES ($1, $2, $3, $4)
 `, session.ID, session.UserID, session.RefreshTokenHash, session.RefreshExpiresAt)
 	return err
@@ -45,7 +45,7 @@ func (repository *SessionRepository) Get(ctx context.Context, id string) (*model
 
 	row := repository.db.QueryRowContext(ctx, `
 SELECT id, user_id, refresh_token_hash, refresh_expires_at
-FROM sessions
+FROM keeper_sessions
 WHERE id=$1
 LIMIT 1
 `, id)
@@ -67,7 +67,7 @@ func (repository *SessionRepository) Delete(ctx context.Context, id string) erro
 	if id == "" {
 		return common.ErrInvalidInput
 	}
-	_, err := repository.db.ExecContext(ctx, `DELETE FROM sessions WHERE id=$1`, id)
+	_, err := repository.db.ExecContext(ctx, `DELETE FROM keeper_sessions WHERE id=$1`, id)
 	return err
 }
 
@@ -86,7 +86,7 @@ func (repository *SessionRepository) Rotate(ctx context.Context, oldSessionID st
 	}
 	defer func() { _ = transaction.Rollback() }()
 
-	result, err := transaction.ExecContext(ctx, `DELETE FROM sessions WHERE id=$1`, oldSessionID)
+	result, err := transaction.ExecContext(ctx, `DELETE FROM keeper_sessions WHERE id=$1`, oldSessionID)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (repository *SessionRepository) Rotate(ctx context.Context, oldSessionID st
 	}
 
 	_, err = transaction.ExecContext(ctx, `
-INSERT INTO sessions (id, user_id, refresh_token_hash, refresh_expires_at)
+INSERT INTO keeper_sessions (id, user_id, refresh_token_hash, refresh_expires_at)
 VALUES ($1, $2, $3, $4)
 `, newSession.ID, newSession.UserID, newSession.RefreshTokenHash, newSession.RefreshExpiresAt)
 	if err != nil {
@@ -118,7 +118,7 @@ func (repository *SessionRepository) FindActiveByRefreshToken(ctx context.Contex
 
 	row := repository.db.QueryRowContext(ctx, `
 SELECT id, user_id, refresh_token_hash, refresh_expires_at
-FROM sessions
+FROM keeper_sessions
 WHERE refresh_token_hash=$1 AND refresh_expires_at > $2
 LIMIT 1
 `, model.HashRefreshToken(refreshToken), now)

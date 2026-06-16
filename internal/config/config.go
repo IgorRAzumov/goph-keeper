@@ -8,8 +8,12 @@ import (
 	"time"
 )
 
-// DefaultJWTSecret — dev-only значение
-const DefaultJWTSecret = "dev-insecure-secret-change-me"
+// DefaultPostgresDSN — локальный Postgres на стандартном порту (127.0.0.1:5432).
+// Переопределите GOPHKEEPER_POSTGRES_DSN, если другой пользователь/пароль/БД.
+const DefaultPostgresDSN = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+
+// DefaultJWTSecret — секрет по умолчанию для локальной разработки.
+const DefaultJWTSecret = "local-dev-jwt-secret"
 
 // Config содержит настройки процесса для API-сервера и будущих адаптеров.
 type Config struct {
@@ -39,7 +43,7 @@ func Load() (Config, error) {
 		JWTSecret:            getEnv("GOPHKEEPER_JWT_SECRET", DefaultJWTSecret),
 		AccessTokenTTL:       accessTTL,
 		RefreshTokenTTL:      refreshTTL,
-		PostgresDSN:          getEnv("GOPHKEEPER_POSTGRES_DSN", ""),
+		PostgresDSN:          getEnv("GOPHKEEPER_POSTGRES_DSN", DefaultPostgresDSN),
 		PostgresMaxOpenConns: maxOpen,
 	}
 
@@ -74,10 +78,6 @@ func mustParseInt(value string) int {
 	return number
 }
 func validateConfig(configuration Config) error {
-	if strings.TrimSpace(configuration.JWTSecret) == DefaultJWTSecret {
-		return fmt.Errorf("config: GOPHKEEPER_JWT_SECRET must be customized")
-	}
-
 	if strings.TrimSpace(configuration.PostgresDSN) == "" {
 		return fmt.Errorf("config: postgres requires GOPHKEEPER_POSTGRES_DSN")
 	}

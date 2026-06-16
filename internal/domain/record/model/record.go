@@ -13,7 +13,7 @@ const (
 
 // Record — унифицированная зашифрованная запись, хранимая для владельца (E2E ciphertext в API/БД).
 type Record struct {
-	// ID — идентификатор записи, генерируемый клиентом (непрозрачная строка).
+	// ID — идентификатор записи, генерируемый клиентом
 	ID string
 	// OwnerID — идентификатор владельца записи (пользователя).
 	OwnerID string
@@ -21,9 +21,10 @@ type Record struct {
 	Type RecordType
 	// Meta — произвольная текстовая метаинформация (JSON или plain text).
 	Meta string
-	// Ciphertext — зашифрованные байты payload (для сервера непрозрачно).
+	// Ciphertext — зашифрованные байты payload
 	Ciphertext []byte
-	// Version поддерживает optimistic concurrency между несколькими клиентами.
+	// Version — монотонно растущий счётчик изменений владельца (глобальный watermark для pull ?since=).
+	// Клиент назначает version > max(version) всех своих записей; для существующей записи — также > её текущей version.
 	Version int64
 	// Deleted = true, когда запись является tombstone для синхронизации.
 	Deleted bool

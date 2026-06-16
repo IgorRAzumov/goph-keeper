@@ -203,3 +203,89 @@ func TestUpdateReturnsNotImplementedWithoutRepository(t *testing.T) {
 		t.Fatalf("expected ErrNotImplemented, got %v", err)
 	}
 }
+
+func TestListSinceReturnsRecords(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	want := []*model.Record{{ID: "record-1", OwnerID: "owner-1", Version: 3}}
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo.EXPECT().
+		ListSince(gomock.Any(), "owner-1", int64(2)).
+		Return(want, nil)
+
+	service := NewRecordService(repo)
+	got, err := service.ListSince(context.Background(), "owner-1", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].ID != "record-1" {
+		t.Fatalf("unexpected records: %+v", got)
+	}
+}
+
+func TestListSinceRejectsInvalidInput(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	service := NewRecordService(repomocks.NewMockRecordRepository(ctrl))
+
+	tests := []struct {
+		name         string
+		ownerID      string
+		sinceVersion int64
+	}{
+		{name: "empty owner", sinceVersion: 0},
+		{name: "negative since", ownerID: "owner-1", sinceVersion: -1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := service.ListSince(context.Background(), tt.ownerID, tt.sinceVersion)
+			if !errors.Is(err, common.ErrInvalidInput) {
+				t.Fatalf("expected ErrInvalidInput, got %v", err)
+			}
+		})
+	}
+}
+
+func TestListSinceReturnsNotImplementedWithoutRepository(t *testing.T) {
+	t.Parallel()
+
+	service := NewRecordService(nil)
+	_, err := service.ListSince(context.Background(), "owner-1", 0)
+	if !errors.Is(err, common.ErrNotImplemented) {
+		t.Fatalf("expected ErrNotImplemented, got %v", err)
+	}
+}
+
+func TestUpdateBatchReturnsConflicts(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	conflict := &model.Record{ID: "record-1", OwnerID: "owner-1", Version: 5}
+	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo.EXPECT().
+		UpdateBatch(gomock.Any(), "owner-1", gomock.Any()).
+		Return([]*model.Record{conflict}, nil)
+
+	service := NewRecordService(repo)
+	got, err := service.UpdateBatch(context.Background(), "owner-1", []*model.Record{{
+		ID:         "record-1",
+		Type:       model.RecordTypeText,
+		Ciphertext: []byte("encrypted"),
+		Version:    3,
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Version != 5 {
+		t.Fatalf("unexpected conflicts: %+v", got)
+	}
+}

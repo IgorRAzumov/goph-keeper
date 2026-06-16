@@ -60,10 +60,10 @@ func TestSessionRepositoryRotateRunsInTransaction(t *testing.T) {
 	}
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`DELETE FROM sessions WHERE id=\$1`).
+	mock.ExpectExec(`DELETE FROM keeper_sessions WHERE id=\$1`).
 		WithArgs("old-session").
 		WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec(`INSERT INTO sessions`).
+	mock.ExpectExec(`INSERT INTO keeper_sessions`).
 		WithArgs(newSession.ID, newSession.UserID, newSession.RefreshTokenHash, newSession.RefreshExpiresAt).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
@@ -94,7 +94,7 @@ func TestSessionRepositoryRotateReturnsNotFoundWhenOldSessionMissing(t *testing.
 	}
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`DELETE FROM sessions WHERE id=\$1`).
+	mock.ExpectExec(`DELETE FROM keeper_sessions WHERE id=\$1`).
 		WithArgs("missing-session").
 		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectRollback()

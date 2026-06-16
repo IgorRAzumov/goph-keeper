@@ -7,6 +7,10 @@ import (
 	"testing"
 	"time"
 
+	appsync "goph-keeper/internal/application/sync"
+	"goph-keeper/internal/domain/record/model"
+	repomocks "goph-keeper/internal/domain/record/repository/mocks"
+	recordsvc "goph-keeper/internal/domain/record/service"
 	sessionmodel "goph-keeper/internal/domain/session/model"
 	sessionmocks "goph-keeper/internal/domain/session/repository/mocks"
 	"goph-keeper/internal/security/jwt"
@@ -50,16 +54,16 @@ func TestRouterAuthRegisterWithoutUseCaseReturnsNotImplemented(t *testing.T) {
 	}
 }
 
-func TestRouterSyncRequiresBearerThenStub(t *testing.T) {
+func TestRouterSyncRequiresBearer(t *testing.T) {
 	provider := jwt.NewProvider("router-test-secret")
 
 	tests := []struct {
-		name         string
-		method       string
-		path         string
-		authHeader   string
-		wantStatus   int
-		wantStubBody bool
+		name       string
+		method     string
+		path       string
+		authHeader string
+		wantStatus int
+		setupSync  bool
 	}{
 		{
 			name:       "no auth",
@@ -75,12 +79,12 @@ func TestRouterSyncRequiresBearerThenStub(t *testing.T) {
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
-			name:         "valid token hits stub",
-			method:       http.MethodGet,
-			path:         "/api/v1/sync/",
-			authHeader:   "Bearer " + mustAccessToken(t, provider),
-			wantStatus:   http.StatusNotImplemented,
-			wantStubBody: true,
+			name:       "valid token pull",
+			method:     http.MethodGet,
+			path:       "/api/v1/sync/?since=0",
+			authHeader: "Bearer " + mustAccessToken(t, provider),
+			wantStatus: http.StatusOK,
+			setupSync:  true,
 		},
 	}
 
@@ -90,7 +94,7 @@ func TestRouterSyncRequiresBearerThenStub(t *testing.T) {
 			t.Cleanup(ctrl.Finish)
 
 			sessions := sessionmocks.NewMockSessionRepository(ctrl)
-			if tt.wantStubBody {
+			if tt.setupSync {
 				sessions.EXPECT().Get(gomock.Any(), "sess-1").Return(&sessionmodel.Session{
 					ID:               "sess-1",
 					UserID:           "user-1",
@@ -99,7 +103,14 @@ func TestRouterSyncRequiresBearerThenStub(t *testing.T) {
 				}, nil)
 			}
 
-			deps := Dependencies{JWT: provider, Sessions: sessions}
+			var syncUsecase *appsync.Usecase
+			if tt.setupSync {
+				records := repomocks.NewMockRecordRepository(ctrl)
+				records.EXPECT().ListSince(gomock.Any(), "user-1", int64(0)).Return([]*model.Record{}, nil)
+				syncUsecase = appsync.NewUsecase(recordsvc.NewRecordService(records))
+			}
+
+			deps := Dependencies{JWT: provider, Sessions: sessions, Sync: syncUsecase}
 			router := Router(nil, deps)
 
 			request := httptest.NewRequest(tt.method, tt.path, nil)
@@ -111,15 +122,15 @@ func TestRouterSyncRequiresBearerThenStub(t *testing.T) {
 			router.ServeHTTP(response, request)
 
 			if response.Code != tt.wantStatus {
-				t.Fatalf("expected status %d, got %d", tt.wantStatus, response.Code)
+				t.Fatalf("expected status %d, got %d body=%s", tt.wantStatus, response.Code, response.Body.String())
 			}
-			if tt.wantStubBody {
+			if tt.setupSync {
 				var body map[string]any
 				if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
 					t.Fatalf("decode: %v", err)
 				}
-				if body["error"] != "not implemented" {
-					t.Fatalf("unexpected body: %#v", body)
+				if _, ok := body["records"]; !ok {
+					t.Fatalf("expected records in body: %#v", body)
 				}
 			}
 		})

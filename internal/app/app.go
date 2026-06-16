@@ -12,8 +12,10 @@ import (
 	applogout "goph-keeper/internal/application/auth/logout"
 	apprefresh "goph-keeper/internal/application/auth/refresh"
 	appregister "goph-keeper/internal/application/auth/register"
+	appsync "goph-keeper/internal/application/sync"
 	"goph-keeper/internal/config"
 	httpapi "goph-keeper/internal/delivery/http"
+	recordsvc "goph-keeper/internal/domain/record/service"
 	sessionsvc "goph-keeper/internal/domain/session/service"
 	usersvc "goph-keeper/internal/domain/user/service"
 	"goph-keeper/internal/infrastructure/postgres"
@@ -105,6 +107,10 @@ func initDependencies(configuration config.Config) (httpapi.Dependencies, *sql.D
 	jwtProvider := jwt.NewProvider(configuration.JWTSecret)
 	logout := applogout.NewLogoutUsecase(sessionRepository, jwtProvider)
 
+	recordRepository := postgres.NewRecordRepository(database)
+	recordService := recordsvc.NewRecordService(recordRepository)
+	syncUsecase := appsync.NewUsecase(recordService)
+
 	return httpapi.Dependencies{
 		RegisterUser: registerUser,
 		Login:        login,
@@ -112,6 +118,7 @@ func initDependencies(configuration config.Config) (httpapi.Dependencies, *sql.D
 		Logout:       logout,
 		JWT:          jwtProvider,
 		Sessions:     sessionRepository,
+		Sync:         syncUsecase,
 	}, database, nil
 
 }

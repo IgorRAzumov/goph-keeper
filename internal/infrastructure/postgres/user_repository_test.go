@@ -64,8 +64,8 @@ func TestUserRepositorySaveConflictOnUniqueViolation(t *testing.T) {
 	repo := NewUserRepository(db)
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(`SELECT 1 FROM users WHERE login=`).WithArgs("dup").WillReturnError(sql.ErrNoRows)
-	mock.ExpectExec(`INSERT INTO users`).WillReturnError(&pgconn.PgError{Code: "23505"})
+	mock.ExpectQuery(`SELECT 1 FROM keeper_users WHERE login=`).WithArgs("dup").WillReturnError(sql.ErrNoRows)
+	mock.ExpectExec(`INSERT INTO keeper_users`).WillReturnError(&pgconn.PgError{Code: "23505"})
 	mock.ExpectRollback()
 
 	err = repo.Save(context.Background(), &model.User{ID: "id1", Login: "dup", PasswordHash: []byte("h")})
