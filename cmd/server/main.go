@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"goph-keeper/internal/app"
+	"goph-keeper/internal/server/app"
 )
 
 func main() {

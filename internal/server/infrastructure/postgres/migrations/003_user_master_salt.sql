@@ -1,0 +1,2 @@
+ALTER TABLE keeper_users
+    ADD COLUMN IF NOT EXISTS master_salt TEXT NOT NULL DEFAULT '';
