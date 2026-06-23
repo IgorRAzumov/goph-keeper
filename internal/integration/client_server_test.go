@@ -60,6 +60,11 @@ func TestClientServerRegisterLoginSyncFlow(t *testing.T) {
 	app2.Config.MasterSalt = app.Config.MasterSalt
 	_ = app2.Save()
 
+	// Чтение (List) — это запрос без побочных эффектов: чтобы увидеть данные
+	// первого клиента, синхронизацию запускаем явной командой.
+	if err := app2.Sync(context.Background()); err != nil {
+		t.Fatalf("sync client2: %v", err)
+	}
 	records, err := app2.List(context.Background())
 	if err != nil {
 		t.Fatalf("list client2: %v", err)

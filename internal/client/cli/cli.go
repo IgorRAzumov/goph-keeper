@@ -26,7 +26,7 @@ func Run(args []string) int {
 	case "add":
 		return runAdd(args[1:])
 	case "list":
-		return runList()
+		return runList(args[1:])
 	case "get":
 		return runGet(args[1:])
 	case "delete":
@@ -51,8 +51,8 @@ Usage:
   gophkeeper logout
   gophkeeper sync
   gophkeeper add -type text|login|card|binary -meta META [options]
-  gophkeeper list
-  gophkeeper get ID
+  gophkeeper list [-sync]
+  gophkeeper get [-sync] ID
   gophkeeper delete ID
 
 Environment:

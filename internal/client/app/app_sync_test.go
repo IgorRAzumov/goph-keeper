@@ -61,9 +61,12 @@ func TestAppMasterKeyFromEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 	app.Config.AccessToken = "x"
-	_, err = app.List(context.Background())
-	if err == nil {
-		t.Fatal("expected error without valid session")
+	records, err := app.List(context.Background())
+	if err != nil {
+		t.Fatalf("list with env master key: %v", err)
+	}
+	if len(records) != 0 {
+		t.Fatalf("expected empty list, got %d", len(records))
 	}
 }
 

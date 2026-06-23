@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 
@@ -10,8 +9,7 @@ import (
 )
 
 func runRegister(args []string) int {
-	flagSet := flag.NewFlagSet("register", flag.ContinueOnError)
-	flagSet.SetOutput(os.Stderr)
+	flagSet := newFlagSet("register")
 	login := flagSet.String("login", "", "account login")
 	password := flagSet.String("password", "", "account password")
 	server := flagSet.String("server", "", "server URL")
@@ -41,8 +39,7 @@ func runRegister(args []string) int {
 }
 
 func runLogin(args []string) int {
-	flagSet := flag.NewFlagSet("login", flag.ContinueOnError)
-	flagSet.SetOutput(os.Stderr)
+	flagSet := newFlagSet("login")
 	login := flagSet.String("login", "", "account login")
 	password := flagSet.String("password", "", "account password")
 	server := flagSet.String("server", "", "server URL")

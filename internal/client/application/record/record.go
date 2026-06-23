@@ -65,12 +65,9 @@ func (usecase *Usecase) Add(ctx context.Context, in AddInput) (string, error) {
 	return id, nil
 }
 
-// List возвращает расшифрованные активные записи.
+// List возвращает расшифрованные активные записи из локального хранилища.
 func (usecase *Usecase) List(ctx context.Context) ([]View, error) {
 	if err := usecase.Session.Ensure(ctx); err != nil {
-		return nil, err
-	}
-	if err := usecase.Sync.Run(ctx); err != nil && !errors.Is(err, api.ErrConflict) {
 		return nil, err
 	}
 	key, err := appsecrets.MasterKey(usecase.State)
@@ -90,12 +87,9 @@ func (usecase *Usecase) List(ctx context.Context) ([]View, error) {
 	return out, nil
 }
 
-// Get возвращает одну расшифрованную запись по id.
+// Get возвращает одну расшифрованную запись по id из локального хранилища.
 func (usecase *Usecase) Get(ctx context.Context, id string) (View, error) {
 	if err := usecase.Session.Ensure(ctx); err != nil {
-		return View{}, err
-	}
-	if err := usecase.Sync.Run(ctx); err != nil && !errors.Is(err, api.ErrConflict) {
 		return View{}, err
 	}
 	record, err := usecase.State.Data.Get(id)

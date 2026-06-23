@@ -11,8 +11,7 @@ import (
 )
 
 func runAdd(args []string) int {
-	flagSet := flag.NewFlagSet("add", flag.ContinueOnError)
-	flagSet.SetOutput(os.Stderr)
+	flagSet := newFlagSet("add")
 	recordType := flagSet.String("type", "text", "record type: text, login, card, binary")
 	meta := flagSet.String("meta", "", "metadata")
 	data := flagSet.String("data", "", "text payload")
@@ -61,8 +60,29 @@ func runAdd(args []string) int {
 	return 0
 }
 
-func runList() int {
+// openAppMaybeSync открывает app и, если задан флаг -sync, синхронизируется
+// перед чтением.
+func openAppMaybeSync(flagSet *flag.FlagSet) (*clientapp.App, error) {
 	app, err := openApp()
+	doSync := *flagSet.Bool("sync", false, "sync with server")
+
+	if err != nil {
+		return nil, err
+	}
+	if doSync {
+		if err := app.Sync(context.Background()); err != nil {
+			return nil, err
+		}
+	}
+	return app, nil
+}
+
+func runList(args []string) int {
+	flagSet := newFlagSet("list")
+	if flagSet.Parse(args) != nil {
+		return 2
+	}
+	app, err := openAppMaybeSync(flagSet)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
@@ -79,16 +99,21 @@ func runList() int {
 }
 
 func runGet(args []string) int {
-	if len(args) == 0 || args[0] == "" {
+	flagSet := newFlagSet("get")
+	if flagSet.Parse(args) != nil {
+		return 2
+	}
+	id := flagSet.Arg(0)
+	if id == "" {
 		fmt.Fprintln(os.Stderr, "get: id required")
 		return 2
 	}
-	app, err := openApp()
+	app, err := openAppMaybeSync(flagSet)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	result, err := app.Get(context.Background(), args[0])
+	result, err := app.Get(context.Background(), id)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1

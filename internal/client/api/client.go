@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,7 +31,7 @@ func NewClient(baseURL string) *Client {
 }
 
 // ErrConflict — сервер вернул 409 с более новыми версиями.
-var ErrConflict = fmt.Errorf("api: sync conflict")
+var ErrConflict = errors.New("api: sync conflict")
 
 // Error — HTTP-ошибка API.
 type Error struct {
