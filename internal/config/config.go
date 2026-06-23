@@ -32,54 +32,93 @@ type Config struct {
 	PostgresMaxOpenConns int
 }
 
-// Load читает конфигурацию из переменных окружения, подставляя значения по умолчанию при отсутствии.
-func Load() (Config, error) {
-	accessTTL := mustParseDuration(getEnv("GOPHKEEPER_ACCESS_TTL", "15m"))
-	refreshTTL := mustParseDuration(getEnv("GOPHKEEPER_REFRESH_TTL", "720h"))
-	maxOpen := mustParseInt(getEnv("GOPHKEEPER_POSTGRES_MAX_OPEN_CONNS", "10"))
+// Load собирает конфигурацию: дефолты → переменные окружения → опции → валидация.
+func Load(opts ...Option) (Config, error) {
+	cfg := defaults()
 
-	configuration := Config{
-		HTTPAddr:             getEnv("GOPHKEEPER_ADDR", "127.0.0.1:8080"),
-		JWTSecret:            getEnv("GOPHKEEPER_JWT_SECRET", DefaultJWTSecret),
-		AccessTokenTTL:       accessTTL,
-		RefreshTokenTTL:      refreshTTL,
-		PostgresDSN:          getEnv("GOPHKEEPER_POSTGRES_DSN", DefaultPostgresDSN),
-		PostgresMaxOpenConns: maxOpen,
-	}
-
-	if err := validateConfig(configuration); err != nil {
+	if err := applyEnv(&cfg); err != nil {
 		return Config{}, err
 	}
-
-	return configuration, nil
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	if err := cfg.validate(); err != nil {
+		return Config{}, err
+	}
+	return cfg, nil
 }
 
-func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
+func defaults() Config {
+	return Config{
+		HTTPAddr:             "127.0.0.1:8080",
+		JWTSecret:            DefaultJWTSecret,
+		AccessTokenTTL:       15 * time.Minute,
+		RefreshTokenTTL:      720 * time.Hour,
+		PostgresDSN:          DefaultPostgresDSN,
+		PostgresMaxOpenConns: 10,
+	}
+}
+
+func applyEnv(cfg *Config) error {
+	cfg.HTTPAddr = stringEnv("GOPHKEEPER_ADDR", cfg.HTTPAddr)
+	cfg.JWTSecret = stringEnv("GOPHKEEPER_JWT_SECRET", cfg.JWTSecret)
+	cfg.PostgresDSN = stringEnv("GOPHKEEPER_POSTGRES_DSN", cfg.PostgresDSN)
+
+	if err := parseEnv(&cfg.AccessTokenTTL, "GOPHKEEPER_ACCESS_TTL", time.ParseDuration); err != nil {
+		return err
+	}
+	if err := parseEnv(&cfg.RefreshTokenTTL, "GOPHKEEPER_REFRESH_TTL", time.ParseDuration); err != nil {
+		return err
+	}
+	if err := parseEnv(&cfg.PostgresMaxOpenConns, "GOPHKEEPER_POSTGRES_MAX_OPEN_CONNS", parsePositiveInt); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (config Config) validate() error {
+	if strings.TrimSpace(config.HTTPAddr) == "" {
+		return fmt.Errorf("config: GOPHKEEPER_ADDR must not be empty")
+	}
+	if strings.TrimSpace(config.PostgresDSN) == "" {
+		return fmt.Errorf("config: postgres requires GOPHKEEPER_POSTGRES_DSN")
+	}
+	if config.AccessTokenTTL <= 0 || config.RefreshTokenTTL <= 0 {
+		return fmt.Errorf("config: token TTL must be > 0")
+	}
+	if config.PostgresMaxOpenConns <= 0 {
+		return fmt.Errorf("config: GOPHKEEPER_POSTGRES_MAX_OPEN_CONNS must be > 0")
+	}
+	return nil
+}
+
+func stringEnv(key, fallback string) string {
+	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
 		return value
 	}
 	return fallback
 }
 
-func mustParseDuration(value string) time.Duration {
-	duration, err := time.ParseDuration(value)
-	if err != nil {
-		// Дефолты в Load() уже валидные; если пользователь ошибся в env — лучше упасть явно.
-		panic("invalid duration: " + value)
+func parseEnv[T any](dst *T, key string, parse func(string) (T, error)) error {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return nil
 	}
-	return duration
+	value, err := parse(raw)
+	if err != nil {
+		return fmt.Errorf("config: %s=%q: %w", key, raw, err)
+	}
+	*dst = value
+	return nil
 }
 
-func mustParseInt(value string) int {
-	number, err := strconv.Atoi(value)
-	if err != nil || number <= 0 {
-		panic("invalid parse Int: " + value)
+func parsePositiveInt(s string) (int, error) {
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
 	}
-	return number
-}
-func validateConfig(configuration Config) error {
-	if strings.TrimSpace(configuration.PostgresDSN) == "" {
-		return fmt.Errorf("config: postgres requires GOPHKEEPER_POSTGRES_DSN")
+	if n <= 0 {
+		return 0, fmt.Errorf("must be a positive integer")
 	}
-	return nil
+	return n, nil
 }

@@ -58,16 +58,14 @@ func (usecase *Usecase) pullWithRetry(ctx context.Context) ([]contract.Record, e
 
 func (usecase *Usecase) pushDirtyWithRebase(ctx context.Context) error {
 	for attempt := 0; attempt < 2; attempt++ {
-		dirty := usecase.State.Data.DirtyRecords()
-		if len(dirty) == 0 {
-			return nil
-		}
-
-		wires := make([]contract.Record, 0, len(dirty))
-		ids := make([]string, 0, len(dirty))
-		for _, record := range dirty {
+		wires := make([]contract.Record, 0)
+		ids := make([]string, 0)
+		for record := range usecase.State.Data.DirtyRecords() {
 			wires = append(wires, RecordToWire(record))
 			ids = append(ids, record.ID)
+		}
+		if len(wires) == 0 {
+			return nil
 		}
 
 		conflicts, err := usecase.pushWithRetry(ctx, wires)

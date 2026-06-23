@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"iter"
 	"os"
 	"path/filepath"
 	"sort"
@@ -78,18 +79,25 @@ func (data *Data) NextVersion() int64 {
 	return data.MaxVersion() + 1
 }
 
-// ListActive возвращает неудалённые записи, отсортированные по meta.
-func (data *Data) ListActive() []Record {
-	out := make([]Record, 0, len(data.Records))
+// ListActive перебирает неудалённые записи в порядке возрастания meta.
+func (data *Data) ListActive() iter.Seq[Record] {
+	// Сортировка требует материализации: пройти map в нужном порядке иначе нельзя.
+	ordered := make([]Record, 0, len(data.Records))
 	for _, record := range data.Records {
 		if !record.Deleted {
-			out = append(out, record)
+			ordered = append(ordered, record)
 		}
 	}
-	sort.Slice(out, func(i, j int) bool {
-		return out[i].Meta < out[j].Meta
+	sort.Slice(ordered, func(i, j int) bool {
+		return ordered[i].Meta < ordered[j].Meta
 	})
-	return out
+	return func(yield func(Record) bool) {
+		for _, record := range ordered {
+			if !yield(record) {
+				return
+			}
+		}
+	}
 }
 
 // Get возвращает запись по id.
@@ -120,15 +128,18 @@ func (data *Data) Delete(id string) error {
 	return nil
 }
 
-// DirtyRecords возвращает записи для push.
-func (data *Data) DirtyRecords() []Record {
-	out := make([]Record, 0)
-	for _, record := range data.Records {
-		if record.Dirty {
-			out = append(out, record)
+// DirtyRecords перебирает записи, требующие push. Обход ленивый и без аллокаций:
+// потребитель может остановиться через break, не собирая весь слайс.
+func (data *Data) DirtyRecords() iter.Seq[Record] {
+	return func(yield func(Record) bool) {
+		for _, record := range data.Records {
+			if record.Dirty {
+				if !yield(record) {
+					return
+				}
+			}
 		}
 	}
-	return out
 }
 
 // MergeRemote применяет запись с сервера (LWW по version).

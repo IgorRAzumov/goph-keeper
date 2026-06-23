@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"goph-keeper/internal/client/model"
@@ -27,7 +28,7 @@ func TestStorePutListDelete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(reloaded.ListActive()) != 1 {
+	if len(slices.Collect(reloaded.ListActive())) != 1 {
 		t.Fatalf("expected 1 record")
 	}
 	if err := reloaded.Delete("r1"); err != nil {
@@ -58,12 +59,12 @@ func TestDirtyRecordsAndMarkPushed(t *testing.T) {
 
 	data := &store.Data{Records: map[string]store.Record{}}
 	data.Put(store.Record{ID: "r1", Version: 1, Ciphertext: []byte("x")})
-	dirty := data.DirtyRecords()
+	dirty := slices.Collect(data.DirtyRecords())
 	if len(dirty) != 1 {
 		t.Fatalf("expected 1 dirty, got %d", len(dirty))
 	}
 	data.MarkPushed("r1")
-	if len(data.DirtyRecords()) != 0 {
+	if len(slices.Collect(data.DirtyRecords())) != 0 {
 		t.Fatal("expected no dirty after push")
 	}
 	if data.LastSyncVersion != 1 {

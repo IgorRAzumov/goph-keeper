@@ -45,10 +45,13 @@ func TestPostgresClientServerFlow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := config.Config{
-		JWTSecret:       "integration-jwt-secret",
-		AccessTokenTTL:  time.Minute,
-		RefreshTokenTTL: time.Hour,
+	cfg, err := config.Load(
+		config.WithJWTSecret("integration-jwt-secret"),
+		config.WithAccessTokenTTL(time.Minute),
+		config.WithRefreshTokenTTL(time.Hour),
+	)
+	if err != nil {
+		t.Fatal(err)
 	}
 	userRepo := postgres.NewUserRepository(db)
 	sessionRepo := postgres.NewSessionRepository(db)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"goph-keeper/internal/client/api"
@@ -165,8 +166,8 @@ func TestSyncRebasesDirtyOnGlobalVersionConflict(t *testing.T) {
 	if err := appB.Sync(context.Background()); err != nil {
 		t.Fatalf("sync with rebase failed: %v", err)
 	}
-	if len(appB.Data.DirtyRecords()) != 0 {
-		t.Fatalf("expected no dirty records after rebase sync, got %d", len(appB.Data.DirtyRecords()))
+	if len(slices.Collect(appB.Data.DirtyRecords())) != 0 {
+		t.Fatalf("expected no dirty records after rebase sync, got %d", len(slices.Collect(appB.Data.DirtyRecords())))
 	}
 }
 

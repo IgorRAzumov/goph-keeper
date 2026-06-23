@@ -17,14 +17,19 @@ func TestInitDependenciesBuildsGraph(t *testing.T) {
 		t.Skip("set GOPHKEEPER_POSTGRES_DSN to run app wiring test")
 	}
 
-	dependencies, database, err := initDependencies(config.Config{
-		HTTPAddr:             "127.0.0.1:0",
-		JWTSecret:            "test-secret",
-		AccessTokenTTL:       time.Minute,
-		RefreshTokenTTL:      time.Hour,
-		PostgresDSN:          postgresDSN,
-		PostgresMaxOpenConns: 1,
-	})
+	cfg, err := config.Load(
+		config.WithHTTPAddr("127.0.0.1:0"),
+		config.WithJWTSecret("test-secret"),
+		config.WithAccessTokenTTL(time.Minute),
+		config.WithRefreshTokenTTL(time.Hour),
+		config.WithPostgresDSN(postgresDSN),
+		config.WithPostgresMaxOpenConns(1),
+	)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	dependencies, database, err := initDependencies(cfg)
 	if err != nil {
 		t.Fatalf("initDependencies failed: %v", err)
 	}

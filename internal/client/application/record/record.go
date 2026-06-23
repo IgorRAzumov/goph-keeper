@@ -75,7 +75,7 @@ func (usecase *Usecase) List(ctx context.Context) ([]View, error) {
 		return nil, err
 	}
 	out := make([]View, 0)
-	for _, record := range usecase.State.Data.ListActive() {
+	for record := range usecase.State.Data.ListActive() {
 		plain, err := clientcrypto.Decrypt(key, record.Ciphertext)
 		if err != nil {
 			return nil, fmt.Errorf("decrypt %s: %w", record.ID, err)
