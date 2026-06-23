@@ -25,9 +25,9 @@ func TestLoginUsecaseRejectsInvalidInput(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	userRepository := usermocks.NewMockUserRepository(controller)
+	userRepository := usermocks.NewMockUserStore(controller)
 	userService := usersvc.NewUserService(userRepository)
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionService := sessionsvc.NewSessionService(sessionRepository)
 
 	sessionRepository.EXPECT().Save(gomock.Any(), gomock.Any()).Times(0)
@@ -47,7 +47,7 @@ func TestLoginUsecaseSuccessPersistsSession(t *testing.T) {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.MinCost)
 	require.NoError(t, err)
 
-	userRepository := usermocks.NewMockUserRepository(controller)
+	userRepository := usermocks.NewMockUserStore(controller)
 	userRepository.EXPECT().
 		GetByLogin(gomock.Any(), "alice").
 		Return(&model.User{
@@ -60,7 +60,7 @@ func TestLoginUsecaseSuccessPersistsSession(t *testing.T) {
 	userService := usersvc.NewUserService(userRepository)
 
 	var savedSession *sessionmodel.Session
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().
 		Save(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, session *sessionmodel.Session) error {

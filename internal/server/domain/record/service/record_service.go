@@ -12,11 +12,11 @@ import (
 // RecordService инкапсулирует доменные операции над зашифрованными записями.
 // Сценарии application-слоя вызывают сервис, а сервис работает через порт репозитория.
 type RecordService struct {
-	recordRepository recordrepo.RecordRepository
+	recordRepository recordrepo.RecordStore
 }
 
 // NewRecordService создаёт сервис записей.
-func NewRecordService(recordRepository recordrepo.RecordRepository) *RecordService {
+func NewRecordService(recordRepository recordrepo.RecordStore) *RecordService {
 	return &RecordService{recordRepository: recordRepository}
 }
 

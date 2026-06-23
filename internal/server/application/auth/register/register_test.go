@@ -19,7 +19,7 @@ func TestRegisterUserUseCaseExecute(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	userRepository := usermocks.NewMockUserRepository(controller)
+	userRepository := usermocks.NewMockUserStore(controller)
 	userRepository.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 
 	userService := usersvc.NewUserService(userRepository)
@@ -39,7 +39,7 @@ func TestRegisterUserUseCaseRejectsInvalidInput(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	userRepository := usermocks.NewMockUserRepository(controller)
+	userRepository := usermocks.NewMockUserStore(controller)
 	usecase := NewUserUsecase(usersvc.NewUserService(userRepository))
 
 	tests := []struct {

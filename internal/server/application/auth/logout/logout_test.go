@@ -21,7 +21,7 @@ func TestLogoutUsecaseRejectsInvalidInput(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().Get(gomock.Any(), gomock.Any()).Times(0)
 
 	usecase := NewLogoutUsecase(sessionRepository, authtest.Provider())
@@ -36,7 +36,7 @@ func TestLogoutUsecaseUnauthorizedOnBadJWT(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().Get(gomock.Any(), gomock.Any()).Times(0)
 
 	usecase := NewLogoutUsecase(sessionRepository, authtest.Provider())
@@ -56,7 +56,7 @@ func TestLogoutUsecaseIdempotentWhenSessionMissing(t *testing.T) {
 	token, err := provider.IssueAccessToken("user-1", "session-1", time.Minute, now)
 	require.NoError(t, err)
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().
 		Get(gomock.Any(), "session-1").
 		Return((*sessionmodel.Session)(nil), common.ErrNotFound)
@@ -76,7 +76,7 @@ func TestLogoutUsecaseUnauthorizedWhenUserMismatch(t *testing.T) {
 	token, err := provider.IssueAccessToken("user-1", "session-1", time.Minute, now)
 	require.NoError(t, err)
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().
 		Get(gomock.Any(), "session-1").
 		Return(&sessionmodel.Session{
@@ -103,7 +103,7 @@ func TestLogoutUsecaseSuccessDeletesSession(t *testing.T) {
 	token, err := provider.IssueAccessToken("user-1", "session-1", time.Minute, now)
 	require.NoError(t, err)
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().
 		Get(gomock.Any(), "session-1").
 		Return(&sessionmodel.Session{
@@ -131,7 +131,7 @@ func TestLogoutUsecasePropagatesRepositoryErrors(t *testing.T) {
 	token, err := provider.IssueAccessToken("user-1", "session-1", time.Minute, now)
 	require.NoError(t, err)
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().
 		Get(gomock.Any(), "session-1").
 		Return((*sessionmodel.Session)(nil), errors.New("db down"))

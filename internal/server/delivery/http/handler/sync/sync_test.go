@@ -30,7 +30,7 @@ func TestSyncPullReturnsRecords(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	repo.EXPECT().ListSince(gomock.Any(), "owner-1", int64(0)).Return([]*model.Record{
 		{ID: "r1", OwnerID: "owner-1", Type: model.RecordTypeText, Ciphertext: []byte("x"), Version: 1},
 	}, nil)
@@ -89,7 +89,7 @@ func TestSyncPushReturnsConflictStatus(t *testing.T) {
 		Ciphertext: []byte("server"), Version: 10,
 	}
 
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	repo.EXPECT().UpdateBatch(gomock.Any(), "owner-1", gomock.Any()).Return([]*model.Record{serverRecord}, nil)
 
 	usecase := appsync.NewUsecase(recordsvc.NewRecordService(repo))
@@ -114,7 +114,7 @@ func TestSyncPushSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	repo.EXPECT().UpdateBatch(gomock.Any(), "owner-1", gomock.Any()).Return([]*model.Record{}, nil)
 
 	usecase := appsync.NewUsecase(recordsvc.NewRecordService(repo))
@@ -168,7 +168,7 @@ func TestSyncPushRejectsInvalidRecordType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	usecase := appsync.NewUsecase(recordsvc.NewRecordService(repo))
 	handler := Push(testLogger(), usecase)
 

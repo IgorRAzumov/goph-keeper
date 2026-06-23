@@ -30,7 +30,7 @@ func TestVerifySuccess(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	now := time.Now().UTC()
-	sessions := sessionmocks.NewMockSessionRepository(ctrl)
+	sessions := sessionmocks.NewMockSessionStore(ctrl)
 	sessions.EXPECT().Get(gomock.Any(), "sess-1").Return(&sessionmodel.Session{
 		ID:               "sess-1",
 		UserID:           "user-1",
@@ -65,7 +65,7 @@ func TestVerifyUnauthorizedCases(t *testing.T) {
 	t.Run("empty token", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		t.Cleanup(ctrl.Finish)
-		usecase := NewUsecase(authtest.Provider(), sessionmocks.NewMockSessionRepository(ctrl))
+		usecase := NewUsecase(authtest.Provider(), sessionmocks.NewMockSessionStore(ctrl))
 		_, err := usecase.Execute(context.Background(), "   ", now)
 		if !errors.Is(err, common.ErrUnauthorized) {
 			t.Fatalf("expected ErrUnauthorized, got %v", err)
@@ -75,7 +75,7 @@ func TestVerifyUnauthorizedCases(t *testing.T) {
 	t.Run("bad token", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		t.Cleanup(ctrl.Finish)
-		usecase := NewUsecase(authtest.Provider(), sessionmocks.NewMockSessionRepository(ctrl))
+		usecase := NewUsecase(authtest.Provider(), sessionmocks.NewMockSessionStore(ctrl))
 		_, err := usecase.Execute(context.Background(), "not-a-jwt", now)
 		if !errors.Is(err, common.ErrUnauthorized) {
 			t.Fatalf("expected ErrUnauthorized, got %v", err)
@@ -85,7 +85,7 @@ func TestVerifyUnauthorizedCases(t *testing.T) {
 	t.Run("session not found", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		t.Cleanup(ctrl.Finish)
-		sessions := sessionmocks.NewMockSessionRepository(ctrl)
+		sessions := sessionmocks.NewMockSessionStore(ctrl)
 		sessions.EXPECT().Get(gomock.Any(), "sess-1").Return(nil, common.ErrNotFound)
 		usecase := NewUsecase(authtest.Provider(), sessions)
 		_, err := usecase.Execute(context.Background(), issueToken(t, "user-1", "sess-1", now), now)
@@ -97,7 +97,7 @@ func TestVerifyUnauthorizedCases(t *testing.T) {
 	t.Run("user mismatch", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		t.Cleanup(ctrl.Finish)
-		sessions := sessionmocks.NewMockSessionRepository(ctrl)
+		sessions := sessionmocks.NewMockSessionStore(ctrl)
 		sessions.EXPECT().Get(gomock.Any(), "sess-1").Return(&sessionmodel.Session{
 			ID: "sess-1", UserID: "other", RefreshExpiresAt: now.Add(time.Hour),
 		}, nil)
@@ -111,7 +111,7 @@ func TestVerifyUnauthorizedCases(t *testing.T) {
 	t.Run("expired session", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		t.Cleanup(ctrl.Finish)
-		sessions := sessionmocks.NewMockSessionRepository(ctrl)
+		sessions := sessionmocks.NewMockSessionStore(ctrl)
 		sessions.EXPECT().Get(gomock.Any(), "sess-1").Return(&sessionmodel.Session{
 			ID: "sess-1", UserID: "user-1", RefreshExpiresAt: now.Add(-time.Minute),
 		}, nil)
@@ -131,7 +131,7 @@ func TestVerifyPropagatesRepositoryError(t *testing.T) {
 
 	now := time.Now().UTC()
 	repoErr := errors.New("db down")
-	sessions := sessionmocks.NewMockSessionRepository(ctrl)
+	sessions := sessionmocks.NewMockSessionStore(ctrl)
 	sessions.EXPECT().Get(gomock.Any(), "sess-1").Return(nil, repoErr)
 
 	usecase := NewUsecase(authtest.Provider(), sessions)

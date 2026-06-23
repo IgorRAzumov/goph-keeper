@@ -10,7 +10,7 @@ import (
 	"goph-keeper/internal/server/domain/session/model"
 )
 
-// SessionRepo — in-memory SessionRepository для тестов.
+// SessionRepo — in-memory SessionStore для тестов.
 type SessionRepo struct {
 	mu       sync.Mutex
 	sessions map[string]*model.Session

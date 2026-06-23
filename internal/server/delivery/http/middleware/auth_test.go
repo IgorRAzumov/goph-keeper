@@ -24,7 +24,7 @@ func TestBearerAuthRejectsRevokedSession(t *testing.T) {
 	provider := jwt.NewProvider("secret")
 	token := mustIssueToken(t, provider, "user-1", "session-1")
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(ctrl)
+	sessionRepository := sessionmocks.NewMockSessionStore(ctrl)
 	sessionRepository.EXPECT().Get(gomock.Any(), "session-1").Return(nil, common.ErrNotFound)
 
 	handler := BearerAuth(appverify.NewUsecase(provider, sessionRepository))(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
@@ -49,7 +49,7 @@ func TestBearerAuthAcceptsExistingSession(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	provider := jwt.NewProvider("secret")
-	sessionRepository := sessionmocks.NewMockSessionRepository(ctrl)
+	sessionRepository := sessionmocks.NewMockSessionStore(ctrl)
 	sessionRepository.EXPECT().Get(gomock.Any(), "session-1").Return(&sessionmodel.Session{
 		ID:               "session-1",
 		UserID:           "user-1",

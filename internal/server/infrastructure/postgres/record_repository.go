@@ -11,7 +11,7 @@ import (
 	"goph-keeper/internal/server/domain/record/model"
 )
 
-// RecordRepository — PostgreSQL-адаптер для recordrepository.RecordRepository.
+// RecordRepository — PostgreSQL-адаптер для recordrepository.RecordStore.
 type RecordRepository struct {
 	db *sql.DB
 }

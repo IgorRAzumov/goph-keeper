@@ -20,7 +20,7 @@ func TestRegisterHashesPasswordAndSavesUser(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	var saved *model.User
-	repo := usermocks.NewMockUserRepository(ctrl)
+	repo := usermocks.NewMockUserStore(ctrl)
 	repo.EXPECT().Save(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, user *model.User) error {
 			saved = user
@@ -57,7 +57,7 @@ func TestRegisterReturnsSaveError(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	saveErr := errors.New("save failed")
-	repo := usermocks.NewMockUserRepository(ctrl)
+	repo := usermocks.NewMockUserStore(ctrl)
 	repo.EXPECT().Save(gomock.Any(), gomock.Any()).Return(saveErr)
 
 	service := NewUserService(repo)
@@ -74,7 +74,7 @@ func TestRegisterRejectsInvalidInput(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	service := NewUserService(usermocks.NewMockUserRepository(ctrl))
+	service := NewUserService(usermocks.NewMockUserStore(ctrl))
 
 	tests := []struct {
 		name     string
@@ -113,7 +113,7 @@ func TestRegisterReturnsConflict(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := usermocks.NewMockUserRepository(ctrl)
+	repo := usermocks.NewMockUserStore(ctrl)
 	repo.EXPECT().Save(gomock.Any(), gomock.Any()).Return(common.ErrConflict)
 
 	service := NewUserService(repo)
@@ -130,7 +130,7 @@ func TestSetMasterSalt(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := usermocks.NewMockUserRepository(ctrl)
+	repo := usermocks.NewMockUserStore(ctrl)
 	repo.EXPECT().SetMasterSalt(gomock.Any(), "u1", "salt").Return(nil)
 	service := NewUserService(repo)
 

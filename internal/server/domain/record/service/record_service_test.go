@@ -19,7 +19,7 @@ func TestGetReturnsRecord(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	want := &model.Record{ID: "record-1", OwnerID: "owner-1", Type: model.RecordTypeText}
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	repo.EXPECT().
 		Get(gomock.Any(), "owner-1", "record-1").
 		Return(want, nil)
@@ -41,7 +41,7 @@ func TestGetRejectsInvalidInput(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	service := NewRecordService(repomocks.NewMockRecordRepository(ctrl))
+	service := NewRecordService(repomocks.NewMockRecordStore(ctrl))
 
 	tests := []struct {
 		name     string
@@ -79,7 +79,7 @@ func TestUpdateAssignsOwnerAndValidatesRecord(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	repo.EXPECT().
 		Update(gomock.Any(), "owner-1", gomock.Any()).
 		DoAndReturn(func(_ context.Context, ownerID string, record *model.Record) error {
@@ -110,7 +110,7 @@ func TestUpdateRejectsOwnerMismatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	service := NewRecordService(repo)
 
 	err := service.Update(context.Background(), "owner-1", &model.Record{
@@ -130,7 +130,7 @@ func TestUpdateRejectsUnknownType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	service := NewRecordService(repo)
 
 	err := service.Update(context.Background(), "owner-1", &model.Record{
@@ -149,7 +149,7 @@ func TestUpdateRejectsEmptyCiphertextForActiveRecord(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	service := NewRecordService(repo)
 
 	err := service.Update(context.Background(), "owner-1", &model.Record{
@@ -167,7 +167,7 @@ func TestUpdateAllowsDeletedRecordWithoutCiphertext(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	repo.EXPECT().
 		Update(gomock.Any(), "owner-1", gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ string, record *model.Record) error {
@@ -211,7 +211,7 @@ func TestListSinceReturnsRecords(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	want := []*model.Record{{ID: "record-1", OwnerID: "owner-1", Version: 3}}
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	repo.EXPECT().
 		ListSince(gomock.Any(), "owner-1", int64(2)).
 		Return(want, nil)
@@ -232,7 +232,7 @@ func TestListSinceRejectsInvalidInput(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	service := NewRecordService(repomocks.NewMockRecordRepository(ctrl))
+	service := NewRecordService(repomocks.NewMockRecordStore(ctrl))
 
 	tests := []struct {
 		name         string
@@ -270,7 +270,7 @@ func TestUpdateBatchReturnsConflicts(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	conflict := &model.Record{ID: "record-1", OwnerID: "owner-1", Version: 5}
-	repo := repomocks.NewMockRecordRepository(ctrl)
+	repo := repomocks.NewMockRecordStore(ctrl)
 	repo.EXPECT().
 		UpdateBatch(gomock.Any(), "owner-1", gomock.Any()).
 		Return([]*model.Record{conflict}, nil)

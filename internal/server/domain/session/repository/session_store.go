@@ -7,8 +7,8 @@ import (
 	"goph-keeper/internal/server/domain/session/model"
 )
 
-// SessionRepository — порт хранения сессий.
-type SessionRepository interface {
+// SessionStore — порт хранения сессий.
+type SessionStore interface {
 	// Save создаёт или обновляет сессию.
 	Save(ctx context.Context, session *model.Session) error
 	// Get возвращает сессию по id или ErrNotFound.

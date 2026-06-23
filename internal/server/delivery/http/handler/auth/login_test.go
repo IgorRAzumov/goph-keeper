@@ -31,13 +31,13 @@ func TestLoginReturnsTokens(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.MinCost)
-	userRepo := usermocks.NewMockUserRepository(ctrl)
+	userRepo := usermocks.NewMockUserStore(ctrl)
 	userRepo.EXPECT().GetByLogin(gomock.Any(), "alice").Return(&model.User{
 		ID: "u1", Login: "alice", PasswordHash: hash,
 		MasterSalt: "salt-1",
 	}, nil)
 
-	sessionRepo := sessionmocks.NewMockSessionRepository(ctrl)
+	sessionRepo := sessionmocks.NewMockSessionStore(ctrl)
 	sessionRepo.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 
 	handler := Login(testLogger(), applogin.NewLoginUsecase(usersvc.NewUserService(userRepo), sessionsvc.NewSessionService(sessionRepo), authtest.Provider(), authtest.AccessTTL, authtest.RefreshTTL))
@@ -68,7 +68,7 @@ func TestLogoutRevokesSession(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sessionRepo := sessionmocks.NewMockSessionRepository(ctrl)
+	sessionRepo := sessionmocks.NewMockSessionStore(ctrl)
 	sessionRepo.EXPECT().Get(gomock.Any(), "s1").Return(&sessionmodel.Session{
 		ID: "s1", UserID: "u1",
 	}, nil)
@@ -92,7 +92,7 @@ func TestRefreshReturnsNewTokens(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	now := time.Now().UTC()
-	sessionRepo := sessionmocks.NewMockSessionRepository(ctrl)
+	sessionRepo := sessionmocks.NewMockSessionStore(ctrl)
 	sessionRepo.EXPECT().FindActiveByRefreshToken(gomock.Any(), "old-refresh", gomock.Any()).
 		Return(&sessionmodel.Session{
 			ID: "s1", UserID: "u1",
@@ -126,7 +126,7 @@ func TestLoginRejectsMissingUseCase(t *testing.T) {
 func TestLogoutRejectsMissingToken(t *testing.T) {
 	t.Parallel()
 
-	handler := Logout(testLogger(), applogout.NewLogoutUsecase(sessionmocks.NewMockSessionRepository(gomock.NewController(t)), authtest.Provider()))
+	handler := Logout(testLogger(), applogout.NewLogoutUsecase(sessionmocks.NewMockSessionStore(gomock.NewController(t)), authtest.Provider()))
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/logout", nil))
 	if rec.Code != http.StatusUnauthorized {
@@ -139,7 +139,7 @@ func TestRefreshRejectsEmptyBody(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
-	sessionRepo := sessionmocks.NewMockSessionRepository(ctrl)
+	sessionRepo := sessionmocks.NewMockSessionStore(ctrl)
 	handler := Refresh(testLogger(), apprefresh.NewRefreshUsecase(sessionRepo, sessionsvc.NewSessionService(sessionRepo), authtest.Provider(), authtest.AccessTTL, authtest.RefreshTTL))
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/refresh", nil))
@@ -154,7 +154,7 @@ func TestRefreshMapsUnauthorized(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	sessionRepo := sessionmocks.NewMockSessionRepository(ctrl)
+	sessionRepo := sessionmocks.NewMockSessionStore(ctrl)
 	sessionRepo.EXPECT().FindActiveByRefreshToken(gomock.Any(), "bad", gomock.Any()).Return(nil, common.ErrNotFound)
 
 	handler := Refresh(testLogger(), apprefresh.NewRefreshUsecase(sessionRepo, sessionsvc.NewSessionService(sessionRepo), authtest.Provider(), authtest.AccessTTL, authtest.RefreshTTL))

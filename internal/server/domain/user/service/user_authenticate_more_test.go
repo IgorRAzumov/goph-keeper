@@ -17,7 +17,7 @@ func TestAuthenticateRejectsInvalidInput(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	svc := NewUserService(usermocks.NewMockUserRepository(ctrl))
+	svc := NewUserService(usermocks.NewMockUserStore(ctrl))
 	_, err := svc.Authenticate(context.Background(), "", "p")
 	if !errors.Is(err, common.ErrInvalidInput) {
 		t.Fatalf("expected invalid input, got %v", err)

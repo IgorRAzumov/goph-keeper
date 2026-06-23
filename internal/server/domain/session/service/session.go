@@ -11,11 +11,11 @@ import (
 
 // SessionService управляет refresh-сессиями.
 type SessionService struct {
-	sessionRepository sessionrepo.SessionRepository
+	sessionRepository sessionrepo.SessionStore
 }
 
 // NewSessionService создаёт сервис сессий.
-func NewSessionService(sessionRepository sessionrepo.SessionRepository) *SessionService {
+func NewSessionService(sessionRepository sessionrepo.SessionStore) *SessionService {
 	return &SessionService{sessionRepository: sessionRepository}
 }
 

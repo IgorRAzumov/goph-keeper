@@ -17,7 +17,7 @@ func TestCreateSessionStoresDeterministicRefreshHash(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
-	repo := sessionmocks.NewMockSessionRepository(ctrl)
+	repo := sessionmocks.NewMockSessionStore(ctrl)
 
 	var saved *sessionmodel.Session
 	repo.EXPECT().
@@ -46,7 +46,7 @@ func TestRotateSessionUsesRepositoryAtomicRotate(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
-	repo := sessionmocks.NewMockSessionRepository(ctrl)
+	repo := sessionmocks.NewMockSessionStore(ctrl)
 
 	repo.EXPECT().
 		Save(gomock.Any(), gomock.AssignableToTypeOf(&sessionmodel.Session{})).

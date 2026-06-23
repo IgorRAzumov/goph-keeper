@@ -14,7 +14,7 @@ import (
 
 // RefreshUsecase обновляет access/refresh токены по refresh-токену (rotation).
 type RefreshUsecase struct {
-	sessionRepository sessionrepo.SessionRepository
+	sessionRepository sessionrepo.SessionStore
 	sessionService    *sessionsvc.SessionService
 	jwt               apptoken.Provider
 	accessTTL         time.Duration
@@ -24,7 +24,7 @@ type RefreshUsecase struct {
 // NewRefreshUsecase создаёт сценарий refresh.
 // jwtProvider, accessTTL и refreshTTL внедряются извне, чтобы слой сценариев не зависел от формата конфигурации.
 func NewRefreshUsecase(
-	sessionRepository sessionrepo.SessionRepository,
+	sessionRepository sessionrepo.SessionStore,
 	sessionService *sessionsvc.SessionService,
 	jwtProvider apptoken.Provider,
 	accessTTL time.Duration,

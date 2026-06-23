@@ -6,8 +6,8 @@ import (
 	"goph-keeper/internal/server/domain/user/model"
 )
 
-// UserRepository сохраняет и загружает пользователя.
-type UserRepository interface {
+// UserStore сохраняет и загружает пользователя.
+type UserStore interface {
 	// Save сохраняет нового пользователя или обновляет существующего.
 	Save(ctx context.Context, user *model.User) error
 	// GetByLogin возвращает пользователя по логину или ErrNotFound.

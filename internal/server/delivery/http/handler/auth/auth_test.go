@@ -23,7 +23,7 @@ func TestAuthRegisterCreatesUser(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	userRepo := usermocks.NewMockUserRepository(controller)
+	userRepo := usermocks.NewMockUserStore(controller)
 	userRepo.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
 
 	handler := Register(testLogger(), appregister.NewUserUsecase(usersvc.NewUserService(userRepo)))
@@ -70,7 +70,7 @@ func TestAuthRegisterRejectsInvalidJSON(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	userRepo := usermocks.NewMockUserRepository(controller)
+	userRepo := usermocks.NewMockUserStore(controller)
 	handler := Register(testLogger(), appregister.NewUserUsecase(usersvc.NewUserService(userRepo)))
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBufferString(`{`))
 	response := httptest.NewRecorder()
@@ -88,7 +88,7 @@ func TestAuthRegisterRequiresPassword(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	userRepo := usermocks.NewMockUserRepository(controller)
+	userRepo := usermocks.NewMockUserStore(controller)
 	handler := Register(testLogger(), appregister.NewUserUsecase(usersvc.NewUserService(userRepo)))
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBufferString(`{
 		"login": "alice"
@@ -108,7 +108,7 @@ func TestAuthRegisterReturnsConflictForDuplicateLogin(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	userRepo := usermocks.NewMockUserRepository(controller)
+	userRepo := usermocks.NewMockUserStore(controller)
 	gomock.InOrder(
 		userRepo.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil),
 		userRepo.EXPECT().Save(gomock.Any(), gomock.Any()).Return(common.ErrConflict),

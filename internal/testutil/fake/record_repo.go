@@ -9,7 +9,7 @@ import (
 	"goph-keeper/internal/server/domain/record/model"
 )
 
-// RecordRepo — in-memory RecordRepository для тестов.
+// RecordRepo — in-memory RecordStore для тестов.
 type RecordRepo struct {
 	mu      sync.Mutex
 	records map[string]map[string]*model.Record // owner -> id -> record

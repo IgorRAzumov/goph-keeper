@@ -23,7 +23,7 @@ func TestAuthenticateSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repo := usermocks.NewMockUserRepository(ctrl)
+	repo := usermocks.NewMockUserStore(ctrl)
 	repo.EXPECT().GetByLogin(gomock.Any(), "alice").Return(&model.User{
 		ID: "u1", Login: "alice", PasswordHash: hash,
 	}, nil)
@@ -44,7 +44,7 @@ func TestAuthenticateWrongPassword(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.MinCost)
-	repo := usermocks.NewMockUserRepository(ctrl)
+	repo := usermocks.NewMockUserStore(ctrl)
 	repo.EXPECT().GetByLogin(gomock.Any(), "alice").Return(&model.User{
 		ID: "u1", Login: "alice", PasswordHash: hash,
 	}, nil)
@@ -61,7 +61,7 @@ func TestAuthenticateUserNotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	repo := usermocks.NewMockUserRepository(ctrl)
+	repo := usermocks.NewMockUserStore(ctrl)
 	repo.EXPECT().GetByLogin(gomock.Any(), "nobody").Return(nil, common.ErrNotFound)
 
 	_, err := NewUserService(repo).Authenticate(context.Background(), "nobody", "x")

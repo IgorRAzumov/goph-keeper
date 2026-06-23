@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// UserRepository — PostgreSQL-адаптер для domain.UserRepository.
+// UserRepository — PostgreSQL-адаптер для domain.UserStore.
 type UserRepository struct {
 	db *sql.DB
 }

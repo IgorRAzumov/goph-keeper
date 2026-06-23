@@ -26,8 +26,8 @@ import (
 // Fixture — тестовый HTTP-сервер с in-memory зависимостями.
 type Fixture struct {
 	Server   *httptest.Server
-	Users    userrepo.UserRepository
-	Sessions sessionrepo.SessionRepository
+	Users    userrepo.UserStore
+	Sessions sessionrepo.SessionStore
 	Records  *fake.RecordRepo
 	JWT      *jwt.Provider
 }

@@ -10,13 +10,13 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestMockSessionRepositoryMethods(t *testing.T) {
+func TestMockSessionStoreMethods(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
-	mock := NewMockSessionRepository(ctrl)
+	mock := NewMockSessionStore(ctrl)
 	if mock.EXPECT() == nil {
 		t.Fatal("expected recorder")
 	}

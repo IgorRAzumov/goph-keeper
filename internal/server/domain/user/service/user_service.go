@@ -14,11 +14,11 @@ import (
 
 // UserService инкапсулирует доменные операции над пользователями.
 type UserService struct {
-	userRepository userrepo.UserRepository
+	userRepository userrepo.UserStore
 }
 
 // NewUserService создаёт сервис пользователей.
-func NewUserService(userRepository userrepo.UserRepository) *UserService {
+func NewUserService(userRepository userrepo.UserStore) *UserService {
 	return &UserService{userRepository: userRepository}
 }
 

@@ -8,7 +8,7 @@ import (
 	"goph-keeper/internal/server/domain/user/model"
 )
 
-// UserRepo — in-memory UserRepository для тестов.
+// UserRepo — in-memory UserStore для тестов.
 type UserRepo struct {
 	mu      sync.Mutex
 	byID    map[string]*model.User

@@ -13,12 +13,12 @@ import (
 
 // Usecase завершает серверную сессию по access JWT (удаляет refresh-сессию по sid из claims).
 type Usecase struct {
-	sessionRepository sessionrepo.SessionRepository
+	sessionRepository sessionrepo.SessionStore
 	jwt               apptoken.Provider
 }
 
 // NewLogoutUsecase создаёт сценарий выхода.
-func NewLogoutUsecase(sessionRepository sessionrepo.SessionRepository, jwtProvider apptoken.Provider) *Usecase {
+func NewLogoutUsecase(sessionRepository sessionrepo.SessionStore, jwtProvider apptoken.Provider) *Usecase {
 	return &Usecase{
 		sessionRepository: sessionRepository,
 		jwt:               jwtProvider,

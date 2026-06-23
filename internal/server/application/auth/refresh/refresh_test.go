@@ -21,7 +21,7 @@ func TestRefreshUsecaseRejectsInvalidInput(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionService := sessionsvc.NewSessionService(sessionRepository)
 	usecase := NewRefreshUsecase(sessionRepository, sessionService, authtest.Provider(), authtest.AccessTTL, authtest.RefreshTTL)
 
@@ -37,7 +37,7 @@ func TestRefreshUsecaseUnauthorizedWhenSessionNotFound(t *testing.T) {
 	controller := gomock.NewController(t)
 	t.Cleanup(controller.Finish)
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().
 		FindActiveByRefreshToken(gomock.Any(), "refresh-1", gomock.AssignableToTypeOf(time.Time{})).
 		Return((*sessionmodel.Session)(nil), common.ErrNotFound)
@@ -63,7 +63,7 @@ func TestRefreshUsecaseUnauthorizedWhenRotateNotFound(t *testing.T) {
 		RefreshExpiresAt: now.Add(time.Hour),
 	}
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().
 		FindActiveByRefreshToken(gomock.Any(), "refresh-1", gomock.AssignableToTypeOf(time.Time{})).
 		Return(session, nil)
@@ -95,7 +95,7 @@ func TestRefreshUsecaseSuccessRotatesSession(t *testing.T) {
 		RefreshExpiresAt: now.Add(time.Hour),
 	}
 
-	sessionRepository := sessionmocks.NewMockSessionRepository(controller)
+	sessionRepository := sessionmocks.NewMockSessionStore(controller)
 	sessionRepository.EXPECT().
 		FindActiveByRefreshToken(gomock.Any(), "refresh-1", gomock.AssignableToTypeOf(time.Time{})).
 		Return(session, nil)

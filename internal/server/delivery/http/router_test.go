@@ -94,7 +94,7 @@ func TestRouterSyncRequiresBearer(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			t.Cleanup(ctrl.Finish)
 
-			sessions := sessionmocks.NewMockSessionRepository(ctrl)
+			sessions := sessionmocks.NewMockSessionStore(ctrl)
 			if tt.setupSync {
 				sessions.EXPECT().Get(gomock.Any(), "sess-1").Return(&sessionmodel.Session{
 					ID:               "sess-1",
@@ -106,7 +106,7 @@ func TestRouterSyncRequiresBearer(t *testing.T) {
 
 			var syncUsecase *appsync.Usecase
 			if tt.setupSync {
-				records := repomocks.NewMockRecordRepository(ctrl)
+				records := repomocks.NewMockRecordStore(ctrl)
 				records.EXPECT().ListSince(gomock.Any(), "user-1", int64(0)).Return([]*model.Record{}, nil)
 				syncUsecase = appsync.NewUsecase(recordsvc.NewRecordService(records))
 			}

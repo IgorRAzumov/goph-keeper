@@ -10,7 +10,7 @@ import (
 	"goph-keeper/internal/server/domain/session/model"
 )
 
-// SessionRepository — Postgres-адаптер для sessionrepository.SessionRepository.
+// SessionRepository — Postgres-адаптер для sessionrepository.SessionStore.
 type SessionRepository struct {
 	db *sql.DB
 }

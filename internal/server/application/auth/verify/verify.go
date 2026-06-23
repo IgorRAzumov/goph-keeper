@@ -18,11 +18,11 @@ import (
 // Usecase проверяет access-токен и связанную с ним серверную сессию.
 type Usecase struct {
 	jwt      apptoken.Provider
-	sessions sessionrepo.SessionRepository
+	sessions sessionrepo.SessionStore
 }
 
 // NewUsecase создаёт сценарий проверки доступа.
-func NewUsecase(jwtProvider apptoken.Provider, sessions sessionrepo.SessionRepository) *Usecase {
+func NewUsecase(jwtProvider apptoken.Provider, sessions sessionrepo.SessionStore) *Usecase {
 	return &Usecase{jwt: jwtProvider, sessions: sessions}
 }
 
