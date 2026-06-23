@@ -25,12 +25,12 @@ func runRegister(args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	app, err := clientapp.New(master)
+	app, err := clientapp.New(master, *server)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	if err := app.Register(context.Background(), *login, *password, *server); err != nil {
+	if err := app.Register(context.Background(), *login, *password); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
@@ -64,12 +64,12 @@ func runLogin(args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	app, err := clientapp.New(master)
+	app, err := clientapp.New(master, *server)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	if err := app.Login(context.Background(), *login, pass, *server); err != nil {
+	if err := app.Login(context.Background(), *login, pass); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
@@ -78,7 +78,7 @@ func runLogin(args []string) int {
 }
 
 func runLogout() int {
-	app, err := clientapp.New("")
+	app, err := clientapp.New("", "")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1

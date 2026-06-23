@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"goph-keeper/internal/client/api"
 	clientapp "goph-keeper/internal/client/app"
 	"goph-keeper/internal/client/model"
 	"goph-keeper/internal/testutil/testserver"
@@ -17,13 +16,12 @@ func TestClientServerRegisterLoginSyncFlow(t *testing.T) {
 	t.Setenv("GOPHKEEPER_CONFIG_DIR", dir)
 	t.Setenv("GOPHKEEPER_MASTER_PASSWORD", "master-secret")
 
-	app, err := clientapp.New("master-secret")
+	app, err := clientapp.New("master-secret", fixture.Server.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	app.API = api.NewClient(fixture.Server.URL)
 
-	if err := app.Register(context.Background(), "alice", "account-pass", fixture.Server.URL); err != nil {
+	if err := app.Register(context.Background(), "alice", "account-pass"); err != nil {
 		t.Fatalf("register: %v", err)
 	}
 	if app.Config.AccessToken == "" {
@@ -48,12 +46,11 @@ func TestClientServerRegisterLoginSyncFlow(t *testing.T) {
 	// второй клиент с тем же аккаунтом подтягивает sync
 	dir2 := filepath.Join(dir, "client2")
 	t.Setenv("GOPHKEEPER_CONFIG_DIR", dir2)
-	app2, err := clientapp.New("master-secret")
+	app2, err := clientapp.New("master-secret", fixture.Server.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	app2.API = api.NewClient(fixture.Server.URL)
-	if err := app2.Login(context.Background(), "alice", "account-pass", fixture.Server.URL); err != nil {
+	if err := app2.Login(context.Background(), "alice", "account-pass"); err != nil {
 		t.Fatalf("login client2: %v", err)
 	}
 	// скопировать соль с первого клиента (в реальности та же учётка — та же соль при первом login)
@@ -80,12 +77,11 @@ func TestClientServerLogout(t *testing.T) {
 	t.Setenv("GOPHKEEPER_CONFIG_DIR", dir)
 	t.Setenv("GOPHKEEPER_MASTER_PASSWORD", "master")
 
-	app, err := clientapp.New("master")
+	app, err := clientapp.New("master", fixture.Server.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	app.API = api.NewClient(fixture.Server.URL)
-	if err := app.Register(context.Background(), "bob", "pass", fixture.Server.URL); err != nil {
+	if err := app.Register(context.Background(), "bob", "pass"); err != nil {
 		t.Fatal(err)
 	}
 	if err := app.Logout(context.Background()); err != nil {

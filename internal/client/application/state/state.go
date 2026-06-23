@@ -1,6 +1,8 @@
 package state
 
 import (
+	"strings"
+
 	"goph-keeper/internal/client/api"
 	clientcfg "goph-keeper/internal/client/config"
 	"goph-keeper/internal/client/store"
@@ -17,10 +19,13 @@ type State struct {
 }
 
 // Load открывает конфиг и локальное хранилище.
-func Load(masterPassword string) (*State, error) {
+func Load(masterPassword, serverURL string) (*State, error) {
 	config, err := clientcfg.Load()
 	if err != nil {
 		return nil, err
+	}
+	if override := strings.TrimSpace(serverURL); override != "" {
+		config.ServerURL = override
 	}
 	dataPath, err := clientcfg.DataPath()
 	if err != nil {
@@ -47,13 +52,4 @@ func (state *State) Save() error {
 		return err
 	}
 	return state.Data.Save(state.DataPath)
-}
-
-// SetServerURL обновляет URL сервера и пересоздаёт API-клиент.
-func (state *State) SetServerURL(serverURL string) {
-	if serverURL == "" {
-		return
-	}
-	state.Config.ServerURL = serverURL
-	state.API = api.NewClient(serverURL)
 }

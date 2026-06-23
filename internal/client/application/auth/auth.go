@@ -21,8 +21,7 @@ func New(state *state.State, session *session.Service) *Usecase {
 }
 
 // Register регистрирует пользователя на сервере и выполняет login.
-func (usecase *Usecase) Register(ctx context.Context, login, password, serverURL string) error {
-	usecase.State.SetServerURL(serverURL)
+func (usecase *Usecase) Register(ctx context.Context, login, password string) error {
 	masterSalt := strings.TrimSpace(usecase.State.Config.MasterSalt)
 	if masterSalt == "" {
 		salt, err := clientcrypto.NewSalt()
@@ -35,12 +34,11 @@ func (usecase *Usecase) Register(ctx context.Context, login, password, serverURL
 		return err
 	}
 	usecase.State.Config.MasterSalt = masterSalt
-	return usecase.Login(ctx, login, password, "")
+	return usecase.Login(ctx, login, password)
 }
 
 // Login аутентифицирует пользователя и сохраняет токены.
-func (usecase *Usecase) Login(ctx context.Context, login, password, serverURL string) error {
-	usecase.State.SetServerURL(serverURL)
+func (usecase *Usecase) Login(ctx context.Context, login, password string) error {
 	access, refresh, masterSalt, err := usecase.State.API.Login(ctx, login, password)
 	if err != nil {
 		return err

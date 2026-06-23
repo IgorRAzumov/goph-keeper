@@ -17,7 +17,7 @@ func openApp() (*clientapp.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	app, err := clientapp.New(master)
+	app, err := clientapp.New(master, "")
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ import (
 	"slices"
 	"testing"
 
-	"goph-keeper/internal/client/api"
 	clientapp "goph-keeper/internal/client/app"
 	clientcfg "goph-keeper/internal/client/config"
 	clientcrypto "goph-keeper/internal/client/crypto"
@@ -22,12 +21,11 @@ func TestAppSyncWithRefreshOnPull(t *testing.T) {
 	t.Setenv("GOPHKEEPER_CONFIG_DIR", dir)
 	t.Setenv("GOPHKEEPER_MASTER_PASSWORD", "master")
 
-	app, err := clientapp.New("master")
+	app, err := clientapp.New("master", fixture.Server.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	app.API = api.NewClient(fixture.Server.URL)
-	if err := app.Register(context.Background(), "refresh-user", "pass", fixture.Server.URL); err != nil {
+	if err := app.Register(context.Background(), "refresh-user", "pass"); err != nil {
 		t.Fatal(err)
 	}
 	// симулируем протухший access, оставляем refresh
@@ -39,7 +37,7 @@ func TestAppSyncWithRefreshOnPull(t *testing.T) {
 }
 
 func TestAppLogoutWithoutToken(t *testing.T) {
-	app, err := clientapp.New("")
+	app, err := clientapp.New("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +55,7 @@ func TestAppMasterKeyFromEnv(t *testing.T) {
 	if err := clientcfg.Save(cfg); err != nil {
 		t.Fatal(err)
 	}
-	app, err := clientapp.New("")
+	app, err := clientapp.New("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,12 +84,11 @@ func TestReadRecordIDFromStore(t *testing.T) {
 	t.Setenv("GOPHKEEPER_CONFIG_DIR", dir)
 	t.Setenv("GOPHKEEPER_MASTER_PASSWORD", "master")
 
-	app, err := clientapp.New("master")
+	app, err := clientapp.New("master", fixture.Server.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	app.API = api.NewClient(fixture.Server.URL)
-	_ = app.Register(context.Background(), "id-user", "pass", fixture.Server.URL)
+	_ = app.Register(context.Background(), "id-user", "pass")
 	id, _ := app.Add(context.Background(), clientapp.AddInput{
 		Type: model.RecordTypeText, Meta: "m", Payload: "x",
 	})
@@ -113,12 +110,11 @@ func TestSyncRebasesDirtyOnGlobalVersionConflict(t *testing.T) {
 	t.Setenv("GOPHKEEPER_CONFIG_DIR", dirA)
 	t.Setenv("GOPHKEEPER_MASTER_PASSWORD", "master")
 
-	appA, err := clientapp.New("master")
+	appA, err := clientapp.New("master", fixture.Server.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	appA.API = api.NewClient(fixture.Server.URL)
-	if err := appA.Register(context.Background(), "rebase-user", "pass", fixture.Server.URL); err != nil {
+	if err := appA.Register(context.Background(), "rebase-user", "pass"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := appA.Add(context.Background(), clientapp.AddInput{
@@ -130,12 +126,11 @@ func TestSyncRebasesDirtyOnGlobalVersionConflict(t *testing.T) {
 	// Второй клиент подтягивает состояние на версии 1.
 	dirB := filepath.Join(t.TempDir(), "b")
 	t.Setenv("GOPHKEEPER_CONFIG_DIR", dirB)
-	appB, err := clientapp.New("master")
+	appB, err := clientapp.New("master", fixture.Server.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	appB.API = api.NewClient(fixture.Server.URL)
-	if err := appB.Login(context.Background(), "rebase-user", "pass", fixture.Server.URL); err != nil {
+	if err := appB.Login(context.Background(), "rebase-user", "pass"); err != nil {
 		t.Fatal(err)
 	}
 	appB.Config.MasterSalt = appA.Config.MasterSalt

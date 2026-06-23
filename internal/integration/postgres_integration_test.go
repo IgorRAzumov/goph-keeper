@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"goph-keeper/internal/client/api"
 	clientapp "goph-keeper/internal/client/app"
 	"goph-keeper/internal/client/model"
 	"goph-keeper/internal/config"
@@ -74,13 +73,12 @@ func TestPostgresClientServerFlow(t *testing.T) {
 	t.Setenv("GOPHKEEPER_CONFIG_DIR", dir)
 	t.Setenv("GOPHKEEPER_MASTER_PASSWORD", "pg-master")
 
-	app, err := clientapp.New("pg-master")
+	app, err := clientapp.New("pg-master", srv.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	app.API = api.NewClient(srv.URL)
 	login := "intuser_" + time.Now().Format("150405")
-	if err := app.Register(ctx, login, "pass", srv.URL); err != nil {
+	if err := app.Register(ctx, login, "pass"); err != nil {
 		t.Fatal(err)
 	}
 	id, err := app.Add(ctx, clientapp.AddInput{Type: model.RecordTypeText, Meta: "m", Payload: "data"})

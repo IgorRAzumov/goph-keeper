@@ -25,18 +25,18 @@ type App struct {
 }
 
 // New загружает конфиг, хранилище и собирает usecase'ы.
-func New(masterPassword string) (*App, error) {
-	st, err := state.Load(masterPassword)
+func New(masterPassword, serverURL string) (*App, error) {
+	state, err := state.Load(masterPassword, serverURL)
 	if err != nil {
 		return nil, err
 	}
-	sess := session.New(st)
-	syncUC := appsync.New(st, sess)
+	session := session.New(state)
+	syncUC := appsync.New(state, session)
 	return &App{
-		State:  st,
-		auth:   appauth.New(st, sess),
+		State:  state,
+		auth:   appauth.New(state, session),
 		sync:   syncUC,
-		record: apprecord.New(st, sess, syncUC),
+		record: apprecord.New(state, session, syncUC),
 	}, nil
 }
 
@@ -46,13 +46,13 @@ func (app *App) Save() error {
 }
 
 // Register регистрирует пользователя на сервере.
-func (app *App) Register(ctx context.Context, login, password, serverURL string) error {
-	return app.auth.Register(ctx, login, password, serverURL)
+func (app *App) Register(ctx context.Context, login, password string) error {
+	return app.auth.Register(ctx, login, password)
 }
 
 // Login аутентифицирует пользователя.
-func (app *App) Login(ctx context.Context, login, password, serverURL string) error {
-	return app.auth.Login(ctx, login, password, serverURL)
+func (app *App) Login(ctx context.Context, login, password string) error {
+	return app.auth.Login(ctx, login, password)
 }
 
 // Logout завершает сессию.
