@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -64,15 +64,29 @@ func (client *Client) Push(ctx context.Context, accessToken string, records []co
 	}
 	defer func() { _ = response.Body.Close() }()
 
-	var out contract.PushResponse
-	if err := decodeResponse(response, &out); err != nil {
-		if errors.Is(err, ErrConflict) {
-			if out.Conflicts == nil {
-				out.Conflicts = []contract.Record{}
-			}
-			return out.Conflicts, ErrConflict
-		}
+	if response.StatusCode == http.StatusConflict {
+		return decodeConflicts(response.Body)
+	}
+
+	if err := decodeResponse(response, nil); err != nil {
 		return nil, fmt.Errorf("api: push: %w", err)
 	}
 	return nil, nil
+}
+
+func decodeConflicts(body io.Reader) ([]contract.Record, error) {
+	raw, err := io.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}
+	var out contract.PushResponse
+	if len(raw) > 0 {
+		if err := json.Unmarshal(raw, &out); err != nil {
+			return nil, fmt.Errorf("api: push: decode conflict: %w", err)
+		}
+	}
+	if out.Conflicts == nil {
+		out.Conflicts = []contract.Record{}
+	}
+	return out.Conflicts, ErrConflict
 }

@@ -82,17 +82,20 @@ func decodeResponse(resp *http.Response, out any) error {
 	if err != nil {
 		return err
 	}
-	if len(body) > 0 && out != nil {
-		_ = json.Unmarshal(body, out)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		var errBody contract.ErrorResponse
+		if len(body) > 0 {
+			_ = json.Unmarshal(body, &errBody)
+		}
+		return &Error{Status: resp.StatusCode, Message: errBody.Error}
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+	if out == nil || len(body) == 0 {
 		return nil
 	}
-	var errBody contract.ErrorResponse
-	if len(body) > 0 {
-		_ = json.Unmarshal(body, &errBody)
+	if err := json.Unmarshal(body, out); err != nil {
+		return fmt.Errorf("api: decode response: %w", err)
 	}
-	return &Error{Status: resp.StatusCode, Message: errBody.Error}
+	return nil
 }
 
 func readAPIError(resp *http.Response) error {

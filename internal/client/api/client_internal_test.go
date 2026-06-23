@@ -29,3 +29,34 @@ func TestDecodeJSONHandlesEmptyBody(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDecodeResponseReturnsErrorOnMalformedSuccessBody(t *testing.T) {
+	t.Parallel()
+
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewBufferString(`{not-json`)),
+	}
+	var out map[string]any
+	if err := decodeResponse(resp, &out); err == nil {
+		t.Fatal("expected decode error for malformed success body")
+	}
+}
+
+func TestDecodeResponseDecodesSuccessBody(t *testing.T) {
+	t.Parallel()
+
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewBufferString(`{"id":"abc"}`)),
+	}
+	var out struct {
+		ID string `json:"id"`
+	}
+	if err := decodeResponse(resp, &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.ID != "abc" {
+		t.Fatalf("expected decoded id, got %q", out.ID)
+	}
+}
